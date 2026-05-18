@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #1B3A6B;
+  --navy-dark: #0F2347;
+  --gold: #C8941A;
+  --gold-light: #F0C84A;
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'Source Sans 3', sans-serif;
+  background: #F2F4F8;
+  color: #111827;
+  overscroll-behavior: none;
+}
+
+/* Smooth scrolling on iOS */
+.scroll-area {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* Hide scrollbar but keep scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Chip press effect */
+.chip:active { transform: scale(0.95); }
+
+/* Card tap effect */
+.card-tap:active { background-color: #EEF2FF; }
+
+/* Slide up animation for modals */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.slide-up { animation: slideUp 0.25s ease; }
+
+/* Pulse animation for crisis button */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.4); }
+}
+.pulse-dot { animation: pulse-dot 1.6s ease-in-out infinite; }
+
+@media print {
+  #app-header, #crisis-btn, .modal-overlay { display: none !important; }
+}
