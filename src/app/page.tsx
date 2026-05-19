@@ -84,7 +84,7 @@ export default function App() {
     if (res) setResources(res)
     if (hot) setHotlines(hot)
     if (res) {
-      const allCounties = Array.from(new Set(res.map(r => r.county).filter(Boolean))).sort()
+      const allCounties = [...new Set(res.map(r => r.county).filter(Boolean))].sort()
       setCounties(allCounties)
     }
     setLoading(false)
@@ -258,50 +258,14 @@ export default function App() {
           <div className="flex-shrink-0 pr-2 border-r border-white/20">
             <span className="font-display font-black text-white tracking-tight" style={{fontSize:'1.6rem',lineHeight:1}}>VA</span>
           </div>
-          {/* Eagle Seal */}
+          {/* Official VA Seal */}
           <div className="flex-shrink-0 px-1">
-            <svg viewBox="0 0 44 44" className="w-9 h-9" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="22" cy="22" r="21" fill="#1a2a5e" stroke="#c8a84a" strokeWidth="1.2"/>
-              <circle cx="22" cy="22" r="18" fill="none" stroke="#c8a84a" strokeWidth=".5"/>
-              {/* Stars ring */}
-              {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(i => {
-                const angle = (i * 360/13) * Math.PI/180
-                const x = 22 + 15.5 * Math.sin(angle)
-                const y = 22 - 15.5 * Math.cos(angle)
-                return <circle key={i} cx={x} cy={y} r=".9" fill="#c8a84a"/>
-              })}
-              {/* Eagle wings left */}
-              <path d="M12 22 Q5 16 4 10 Q9 15 13 19Z" fill="#c8c8c8"/>
-              <path d="M12 24 Q4 22 3 17 Q8 21 13 22Z" fill="#e0e0e0"/>
-              <path d="M12 26 Q5 28 5 33 Q9 28 13 27Z" fill="#c8c8c8"/>
-              {/* Eagle wings right */}
-              <path d="M32 22 Q39 16 40 10 Q35 15 31 19Z" fill="#c8c8c8"/>
-              <path d="M32 24 Q40 22 41 17 Q36 21 31 22Z" fill="#e0e0e0"/>
-              <path d="M32 26 Q39 28 39 33 Q35 28 31 27Z" fill="#c8c8c8"/>
-              {/* Eagle body */}
-              <ellipse cx="22" cy="25" rx="6" ry="8" fill="#e0e0e0"/>
-              {/* Eagle head */}
-              <circle cx="22" cy="15" r="4.5" fill="#e0e0e0"/>
-              {/* Beak */}
-              <path d="M25 15 L29 16 L25 17Z" fill="#c8a84a"/>
-              {/* Eye */}
-              <circle cx="25" cy="14" r=".9" fill="#1a2a5e"/>
-              {/* Shield */}
-              <path d="M19 22 Q19 19 22 18 Q25 19 25 22 L24.5 27 Q22 29 19.5 27Z" fill="#c8a84a"/>
-              <path d="M20.5 22 Q20.5 20 22 19.5 Q23.5 20 23.5 22 L23 26 Q22 27.5 21 26Z" fill="#1a2a5e"/>
-              {/* Arrows in talons */}
-              <path d="M17 31 L14 35M15 31 L12 34M19 32 L17 36" stroke="#c8a84a" strokeWidth="1" strokeLinecap="round"/>
-              <path d="M27 31 L30 35M29 31 L32 34M25 32 L27 36" stroke="#c8a84a" strokeWidth="1" strokeLinecap="round"/>
-              {/* Olive branch */}
-              <path d="M19 31 Q17 33 15 32" stroke="#4a8a4a" strokeWidth="1.2" strokeLinecap="round"/>
-              <circle cx="15" cy="32" r="1" fill="#4a8a4a"/>
-              <circle cx="17" cy="31" r=".8" fill="#4a8a4a"/>
-              {/* Bottom text */}
-              <path id="botArc" d="M 7 30 A 16 16 0 0 0 37 30" fill="none"/>
-              <text fontFamily="serif" fontSize="3.2" fill="#c8a84a">
-                <textPath href="#botArc" startOffset="10%">DEPARTMENT OF VETERANS AFFAIRS</textPath>
-              </text>
-            </svg>
+            <img
+              src="https://www.va.gov/img/design/logo/va-seal.png"
+              alt="VA Seal"
+              className="w-9 h-9 object-contain"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
           </div>
           {/* Text block */}
           <div className="flex-1 min-w-0 pl-1">
