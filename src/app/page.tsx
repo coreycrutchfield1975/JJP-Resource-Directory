@@ -78,7 +78,7 @@ export default function App() {
   async function loadAll() {
     setLoading(true)
     const [{ data: res }, { data: hot }] = await Promise.all([
-      supabase.from('resources').select('*').order('pinned', { ascending: false }).order('name'),
+      supabase.from('resources').select('*').order('pinned', { ascending: false }).order('name').limit(2000),
       supabase.from('hotlines').select('*').order('category').order('name'),
     ])
     if (res) setResources(res)
