@@ -8,6 +8,15 @@ type Modal = 'none' | 'crisis' | 'resource' | 'hotline' | 'share' | 'suggest' | 
 
 const PAGE_SIZE = 30
 
+// ─── 4 consolidated categories ───────────────────────────────────────────────
+const CATEGORIES = [
+  { label: 'All',             value: '',            icon: '🗂️',  types: [] },
+  { label: 'Crisis & Health', value: 'crisis',      icon: '🆘',  types: ['Emergency','Health'] },
+  { label: 'Basic Needs',     value: 'basic',       icon: '🏠',  types: ['Food','Housing','Assistance','Charity'] },
+  { label: 'Veteran Services',value: 'veteran',     icon: '🎖️', types: ['Veteran','Legal'] },
+  { label: 'Community',       value: 'community',   icon: '🤝',  types: ['Community','Transportation'] },
+]
+
 const HOTLINE_SECTION_STYLE: Record<string, string> = {
   Crisis:           'bg-red-700',
   Emergency:        'bg-red-600',
@@ -28,12 +37,12 @@ export default function App() {
   const [loading, setLoading]       = useState(true)
 
   // Filters
-  const [search, setSearch]         = useState('')
-  const [typeFilter, setTypeFilter] = useState('')
+  const [search, setSearch]           = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
   const [stateFilter, setStateFilter] = useState('')
   const [countyFilter, setCountyFilter] = useState('')
-  const [sortBy, setSortBy]         = useState('pinned')
-  const [page, setPage]             = useState(1)
+  const [sortBy, setSortBy]           = useState('pinned')
+  const [page, setPage]               = useState(1)
 
   // UI
   const [view, setView]             = useState<View>('resources')
@@ -75,7 +84,7 @@ export default function App() {
     if (res) setResources(res)
     if (hot) setHotlines(hot)
     if (res) {
-      const allCounties = Array.from(new Set(res.map(r => r.county).filter(Boolean))).sort()
+      const allCounties = [...new Set(res.map(r => r.county).filter(Boolean))].sort()
       setCounties(allCounties)
     }
     setLoading(false)
@@ -84,8 +93,9 @@ export default function App() {
   // ─── Filtered resources ──────────────────────────────────────────────────────
   const filtered = useCallback(() => {
     const q = search.toLowerCase()
+    const cat = CATEGORIES.find(c => c.value === categoryFilter)
     let list = resources.filter(r => {
-      if (typeFilter && r.type !== typeFilter) return false
+      if (cat && cat.types.length > 0 && !cat.types.includes(r.type)) return false
       if (stateFilter && r.state !== stateFilter) return false
       if (countyFilter && r.county !== countyFilter) return false
       if (q) {
@@ -106,14 +116,14 @@ export default function App() {
       return a.name.localeCompare(b.name)
     })
     return list
-  }, [resources, search, typeFilter, stateFilter, countyFilter, sortBy])
+  }, [resources, search, categoryFilter, stateFilter, countyFilter, sortBy])
 
   const results   = filtered()
   const totalPages = Math.ceil(results.length / PAGE_SIZE)
   const pageItems  = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   function clearFilters() {
-    setSearch(''); setTypeFilter(''); setStateFilter(''); setCountyFilter('')
+    setSearch(''); setCategoryFilter(''); setStateFilter(''); setCountyFilter('')
     setPage(1); scrollRef.current?.scrollTo(0, 0)
   }
 
@@ -243,18 +253,73 @@ export default function App() {
         style={{ background: 'linear-gradient(135deg, #0F2347 0%, #1B3A6B 70%, #254e91 100%)', boxShadow: '0 3px 12px rgba(0,0,0,.35)' }}>
 
         {/* Top row */}
-        <div className="flex items-center gap-3 px-3.5 py-2.5 border-b-2 border-[#C8941A]">
-          <span className="text-3xl leading-none flex-shrink-0">🇺🇸</span>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-display font-bold text-white text-sm uppercase tracking-wide leading-tight">Veterans Resource Directory</h1>
-            <p className="text-[0.65rem] text-[#F0C84A] opacity-80 mt-0.5">John J. Pershing VA · Poplar Bluff, MO</p>
+        <div className="flex items-center gap-2 px-3 py-2 border-b-2 border-[#C8941A]" style={{background:'#000'}}>
+          {/* VA Letters */}
+          <div className="flex-shrink-0 pr-2 border-r border-white/20">
+            <span className="font-display font-black text-white tracking-tight" style={{fontSize:'1.6rem',lineHeight:1}}>VA</span>
+          </div>
+          {/* Eagle Seal */}
+          <div className="flex-shrink-0 px-1">
+            <svg viewBox="0 0 44 44" className="w-9 h-9" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="22" cy="22" r="21" fill="#1a2a5e" stroke="#c8a84a" strokeWidth="1.2"/>
+              <circle cx="22" cy="22" r="18" fill="none" stroke="#c8a84a" strokeWidth=".5"/>
+              {/* Stars ring */}
+              {[0,1,2,3,4,5,6,7,8,9,10,11,12].map(i => {
+                const angle = (i * 360/13) * Math.PI/180
+                const x = 22 + 15.5 * Math.sin(angle)
+                const y = 22 - 15.5 * Math.cos(angle)
+                return <circle key={i} cx={x} cy={y} r=".9" fill="#c8a84a"/>
+              })}
+              {/* Eagle wings left */}
+              <path d="M12 22 Q5 16 4 10 Q9 15 13 19Z" fill="#c8c8c8"/>
+              <path d="M12 24 Q4 22 3 17 Q8 21 13 22Z" fill="#e0e0e0"/>
+              <path d="M12 26 Q5 28 5 33 Q9 28 13 27Z" fill="#c8c8c8"/>
+              {/* Eagle wings right */}
+              <path d="M32 22 Q39 16 40 10 Q35 15 31 19Z" fill="#c8c8c8"/>
+              <path d="M32 24 Q40 22 41 17 Q36 21 31 22Z" fill="#e0e0e0"/>
+              <path d="M32 26 Q39 28 39 33 Q35 28 31 27Z" fill="#c8c8c8"/>
+              {/* Eagle body */}
+              <ellipse cx="22" cy="25" rx="6" ry="8" fill="#e0e0e0"/>
+              {/* Eagle head */}
+              <circle cx="22" cy="15" r="4.5" fill="#e0e0e0"/>
+              {/* Beak */}
+              <path d="M25 15 L29 16 L25 17Z" fill="#c8a84a"/>
+              {/* Eye */}
+              <circle cx="25" cy="14" r=".9" fill="#1a2a5e"/>
+              {/* Shield */}
+              <path d="M19 22 Q19 19 22 18 Q25 19 25 22 L24.5 27 Q22 29 19.5 27Z" fill="#c8a84a"/>
+              <path d="M20.5 22 Q20.5 20 22 19.5 Q23.5 20 23.5 22 L23 26 Q22 27.5 21 26Z" fill="#1a2a5e"/>
+              {/* Arrows in talons */}
+              <path d="M17 31 L14 35M15 31 L12 34M19 32 L17 36" stroke="#c8a84a" strokeWidth="1" strokeLinecap="round"/>
+              <path d="M27 31 L30 35M29 31 L32 34M25 32 L27 36" stroke="#c8a84a" strokeWidth="1" strokeLinecap="round"/>
+              {/* Olive branch */}
+              <path d="M19 31 Q17 33 15 32" stroke="#4a8a4a" strokeWidth="1.2" strokeLinecap="round"/>
+              <circle cx="15" cy="32" r="1" fill="#4a8a4a"/>
+              <circle cx="17" cy="31" r=".8" fill="#4a8a4a"/>
+              {/* Bottom text */}
+              <path id="botArc" d="M 7 30 A 16 16 0 0 0 37 30" fill="none"/>
+              <text fontFamily="serif" fontSize="3.2" fill="#c8a84a">
+                <textPath href="#botArc" startOffset="10%">DEPARTMENT OF VETERANS AFFAIRS</textPath>
+              </text>
+            </svg>
+          </div>
+          {/* Text block */}
+          <div className="flex-1 min-w-0 pl-1">
+            <div className="text-white font-semibold font-body leading-tight" style={{fontSize:'.72rem'}}>U.S. Department of Veterans Affairs</div>
+            <div className="text-white/70 font-body leading-tight" style={{fontSize:'.6rem'}}>Veterans Health Administration</div>
+            <div className="text-[#C8941A] font-body leading-tight font-semibold" style={{fontSize:'.6rem'}}>John J. Pershing VA Medical Center</div>
           </div>
           <button onClick={() => isAdmin ? doLogout() : openModal('login')}
-            className={`text-xs px-3 py-1.5 rounded-md border font-body transition-all flex-shrink-0 ${isAdmin
+            className={`text-xs px-2.5 py-1.5 rounded-md border font-body transition-all flex-shrink-0 ${isAdmin
               ? 'bg-amber-800 border-amber-700 text-white'
               : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/20'}`}>
-            {isAdmin ? '🛡️ Admin' : '🔒 Staff'}
+            {isAdmin ? '🛡️' : '🔒'}
           </button>
+        </div>
+
+        {/* Title bar */}
+        <div className="px-3.5 py-1.5" style={{background:'linear-gradient(135deg,#0F2347 0%,#1B3A6B 100%)'}}>
+          <h1 className="font-display font-bold text-white uppercase tracking-widest" style={{fontSize:'.78rem',letterSpacing:'.12em'}}>Veterans Resource Directory</h1>
         </div>
 
         {/* Search */}
@@ -270,15 +335,15 @@ export default function App() {
           <button onClick={clearFilters} className="px-3 py-2 rounded-lg border-2 border-white/18 text-white/60 text-xs font-body whitespace-nowrap active:bg-white/10 transition-all">✕ Clear</button>
         </div>
 
-        {/* Type filter chips */}
+        {/* 4 Category filter chips */}
         <div className="flex gap-1.5 px-3 pb-2 overflow-x-auto no-scrollbar">
-          {[{ label: 'All', value: '' }, ...RESOURCE_TYPES.map(t => ({ label: `${TYPE_META[t].icon} ${t}`, value: t }))].map(chip => (
-            <button key={chip.value} onClick={() => { setTypeFilter(chip.value); setPage(1); scrollRef.current?.scrollTo(0, 0) }}
-              className={`chip flex-shrink-0 px-2.5 py-1.5 rounded-full border text-xs whitespace-nowrap transition-all font-body ${
-                typeFilter === chip.value
-                  ? 'bg-[#C8941A] border-[#C8941A] text-[#0F2347] font-semibold'
+          {CATEGORIES.map(cat => (
+            <button key={cat.value} onClick={() => { setCategoryFilter(cat.value); setPage(1); scrollRef.current?.scrollTo(0, 0) }}
+              className={`chip flex-shrink-0 px-3 py-1.5 rounded-full border text-xs whitespace-nowrap transition-all font-body font-semibold ${
+                categoryFilter === cat.value
+                  ? 'bg-[#C8941A] border-[#C8941A] text-[#0F2347]'
                   : 'bg-white/8 border-white/20 text-white/75'}`}>
-              {chip.label}
+              {cat.icon} {cat.label}
             </button>
           ))}
         </div>
