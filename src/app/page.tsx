@@ -84,7 +84,7 @@ export default function App() {
     if (res) setResources(res)
     if (hot) setHotlines(hot)
     if (res) {
-      const allCounties = [...new Set(res.map(r => r.county).filter(Boolean))].sort()
+      const allCounties = Array.from(new Set(res.map((r: Resource) => r.county).filter(Boolean))).sort() as string[]
       setCounties(allCounties)
     }
     setLoading(false)
