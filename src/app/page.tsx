@@ -1,10 +1,10 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { supabase, Resource, Hotline, TYPE_META, RESOURCE_TYPES, HOTLINE_CATEGORIES, STATES } from '@/lib/supabase'
+import { supabase, Resource, Hotline, NursingHome, TYPE_META, RESOURCE_TYPES, HOTLINE_CATEGORIES, STATES, NH_STATES } from '@/lib/supabase'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type View = 'resources' | 'hotlines'
-type Modal = 'none' | 'crisis' | 'resource' | 'hotline' | 'share' | 'suggest' | 'login' | 'settings'
+type View = 'resources' | 'hotlines' | 'nursing_homes'
+type Modal = 'none' | 'crisis' | 'resource' | 'hotline' | 'share' | 'suggest' | 'login' | 'settings' | 'share_nh' | 'edit_nh'
 
 const PAGE_SIZE = 30
 
@@ -55,6 +55,16 @@ export default function App() {
   const [editHotline, setEditHotline]   = useState<Partial<Hotline> | null>(null)
   const [shareTarget, setShareTarget]   = useState<Resource | null>(null)
 
+  // Nursing Homes
+  const [nursingHomes, setNursingHomes]             = useState<NursingHome[]>([])
+  const [nhCounties, setNhCounties]                 = useState<string[]>([])
+  const [nhStateFilter, setNhStateFilter]           = useState('')
+  const [nhCountyFilter, setNhCountyFilter]         = useState('')
+  const [nhContractFilter, setNhContractFilter]     = useState('')
+  const [nhBehavioralFilter, setNhBehavioralFilter] = useState('')
+  const [shareNHTarget, setShareNHTarget]           = useState<NursingHome | null>(null)
+  const [editNH, setEditNH]                         = useState<Partial<NursingHome> | null>(null)
+
   // Refs
   const scrollRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -77,12 +87,18 @@ export default function App() {
 
   async function loadAll() {
     setLoading(true)
-    const [{ data: res }, { data: hot }] = await Promise.all([
+    const [{ data: res }, { data: hot }, { data: nh }] = await Promise.all([
       supabase.from('resources').select('*').order('pinned', { ascending: false }).order('name').limit(2000),
       supabase.from('hotlines').select('*').order('category').order('name'),
+      supabase.from('nursing_homes').select('*').order('state').order('county').order('name').limit(2000),
     ])
     if (res) setResources(res)
     if (hot) setHotlines(hot)
+    if (nh) {
+      setNursingHomes(nh)
+      const allNHCounties = Array.from(new Set(nh.map((h: NursingHome) => h.county).filter(Boolean))).sort() as string[]
+      setNhCounties(allNHCounties)
+    }
     if (res) {
       const allCounties = Array.from(new Set(res.map((r: Resource) => r.county).filter(Boolean))).sort() as string[]
       setCounties(allCounties)
@@ -118,12 +134,31 @@ export default function App() {
     return list
   }, [resources, search, categoryFilter, stateFilter, countyFilter, sortBy])
 
+  const filteredNH = useCallback(() => {
+    const q = search.toLowerCase()
+    return nursingHomes.filter(h => {
+      if (nhStateFilter && h.state !== nhStateFilter) return false
+      if (nhCountyFilter && h.county !== nhCountyFilter) return false
+      if (nhContractFilter === 'yes' && !h.va_contract) return false
+      if (nhContractFilter === 'no' && h.va_contract) return false
+      if (nhBehavioralFilter === 'yes' && !h.behavioral_unit) return false
+      if (nhBehavioralFilter === 'no' && h.behavioral_unit) return false
+      if (q) {
+        const hay = [h.name, h.city, h.county, h.state, h.phone, h.address, h.va_contract, h.behavioral_unit]
+          .join(' ').toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+      return true
+    })
+  }, [nursingHomes, search, nhStateFilter, nhCountyFilter, nhContractFilter, nhBehavioralFilter])
+
   const results   = filtered()
   const totalPages = Math.ceil(results.length / PAGE_SIZE)
   const pageItems  = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   function clearFilters() {
     setSearch(''); setCategoryFilter(''); setStateFilter(''); setCountyFilter('')
+    setNhStateFilter(''); setNhCountyFilter(''); setNhContractFilter(''); setNhBehavioralFilter('')
     setPage(1); scrollRef.current?.scrollTo(0, 0)
   }
 
@@ -189,6 +224,33 @@ export default function App() {
     setModal('none'); loadAll()
   }
 
+  async function saveNursingHome(data: Partial<NursingHome>) {
+    if (!data.name) return
+    const payload = {
+      name:            data.name,
+      county:          data.county || '',
+      city:            data.city || '',
+      state:           data.state || 'MO',
+      address:         data.address || '',
+      phone:           data.phone || '',
+      fax:             data.fax || '',
+      behavioral_unit: data.behavioral_unit || '',
+      va_contract:     data.va_contract || '',
+    }
+    if (data.id) {
+      await supabase.from('nursing_homes').update(payload).eq('id', data.id)
+    } else {
+      await supabase.from('nursing_homes').insert(payload)
+    }
+    setModal('none'); loadAll()
+  }
+
+  async function deleteNursingHome(id: string, name: string) {
+    if (!confirm(`Delete "${name}"?`)) return
+    await supabase.from('nursing_homes').delete().eq('id', id)
+    setModal('none'); loadAll()
+  }
+
   async function logAudit(action: string, table: string, id: string, name: string) {
     await supabase.from('audit_log').insert({ action, table_name: table, record_id: id, record_name: name, changed_by: adminEmail })
   }
@@ -233,6 +295,89 @@ export default function App() {
       <table><thead><tr><th width="28%">Name</th><th width="14%">City</th><th width="16%">Phone</th><th width="24%">Address</th><th>Notes</th></tr></thead>
       <tbody>${items.sort((a,b)=>a.name.localeCompare(b.name)).map(r=>`<tr><td>${r.pinned?'<span class="pin">⭐ </span>':''}${r.name}</td><td>${r.city||''}</td><td><strong>${r.phone||''}</strong></td><td>${r.address||''}</td><td style="font-size:7pt;font-style:italic;color:#92400E;">${r.notes||''}</td></tr>`).join('')}</tbody></table>`).join('')}
     <footer>Always call ahead to verify hours and availability. John J. Pershing VA Medical Center, Poplar Bluff MO.</footer>
+    </body></html>`
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close(); w.print() }
+  }
+
+  // ─── NH Share ────────────────────────────────────────────────────────────────
+  async function shareNursingHome(h: NursingHome, method: 'email' | 'sms', contact: string) {
+    const loc = [h.city, h.county ? h.county + ' County' : '', h.state].filter(Boolean).join(', ')
+    const body = [
+      `Nursing Home Referral: ${h.name}`,
+      loc ? `Location: ${loc}` : '',
+      h.address ? `Address: ${h.address}` : '',
+      h.phone ? `Phone: ${h.phone}` : '',
+      h.fax ? `Fax: ${h.fax}` : '',
+      h.va_contract ? `VA Contract: ${h.va_contract}` : '',
+      h.behavioral_unit ? `Behavioral Unit: ${h.behavioral_unit}` : '',
+      '',
+      'From: Veterans Resource Directory — John J. Pershing VA Medical Center',
+    ].filter(l => l !== undefined && (l !== '' || l === '')).join('\n').replace(/\n{3,}/g, '\n\n').trim()
+    await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method, contact, resource: h, text: body }),
+    })
+    setModal('none')
+    alert(`Sent to ${contact}`)
+  }
+
+  // ─── NH Print ────────────────────────────────────────────────────────────────
+  function printNHCard(h: NursingHome) {
+    const loc = [h.city, h.county ? h.county + ' County' : '', h.state].filter(Boolean).join(', ')
+    const html = `<html><head><title>${h.name}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+    <style>body{font-family:'Source Sans 3',sans-serif;font-size:10pt;color:#111;max-width:680px;margin:0 auto;padding:20px;}
+    h1{font-family:'Oswald',sans-serif;font-size:17pt;margin:0 0 3px;}
+    .hdr{background:#0F2347;color:#fff;padding:13px 17px;margin-bottom:4px;}
+    .gold{background:#C8941A;height:3px;margin-bottom:16px;}
+    .row{display:flex;gap:10px;margin-bottom:9px;align-items:flex-start;}
+    .lbl{font-weight:600;font-size:8pt;text-transform:uppercase;letter-spacing:.08em;color:#555;min-width:100px;padding-top:1px;}
+    .val{font-size:10pt;}
+    .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:8pt;font-weight:700;}
+    .ctr{background:#d1fae5;color:#065f46;}
+    .beh{background:#ede9fe;color:#4c1d95;}
+    footer{font-size:7pt;color:#888;margin-top:20px;border-top:1px solid #ddd;padding-top:8px;}
+    @media print{body{margin:0;padding:10px;}}</style></head><body>
+    <div class="hdr"><h1>🏥 ${h.name}</h1>
+    <p style="font-size:8pt;opacity:.7;margin:3px 0 0">${loc} · Nursing Home Referral</p></div>
+    <div class="gold"></div>
+    ${h.address ? `<div class="row"><span class="lbl">Address</span><span class="val">${h.address}</span></div>` : ''}
+    ${h.phone ? `<div class="row"><span class="lbl">Phone</span><span class="val"><strong>${h.phone}</strong></span></div>` : ''}
+    ${h.fax ? `<div class="row"><span class="lbl">Fax</span><span class="val">${h.fax}</span></div>` : ''}
+    ${h.va_contract ? `<div class="row"><span class="lbl">VA Contract</span><span class="val"><span class="badge ctr">✓ ${h.va_contract}</span></span></div>` : ''}
+    ${h.behavioral_unit ? `<div class="row"><span class="lbl">Behavioral</span><span class="val"><span class="badge beh">${h.behavioral_unit}</span></span></div>` : ''}
+    <footer>John J. Pershing VA Medical Center · Poplar Bluff MO · ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</footer>
+    </body></html>`
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close(); w.print() }
+  }
+
+  function printNHList() {
+    const list = filteredNH()
+    if (!list.length) { alert('No nursing homes match your current filters.'); return }
+    const html = `<html><head><title>Nursing Home Directory</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+    <style>body{font-family:'Source Sans 3',sans-serif;font-size:8pt;color:#111;}
+    h1{font-family:'Oswald',sans-serif;font-size:15pt;margin:0;}
+    .hdr{background:#0F2347;color:#fff;padding:11px 15px;margin-bottom:4px;}
+    .gold{background:#C8941A;height:3px;margin-bottom:10px;}
+    table{width:100%;border-collapse:collapse;font-size:7.5pt;}
+    th{background:#1B3A6B;color:#fff;padding:4px 6px;text-align:left;}
+    td{padding:4px 6px;border-bottom:1px solid #eee;vertical-align:top;}
+    tr:nth-child(even) td{background:#F8F9FF;}
+    .c{background:#d1fae5;color:#065f46;padding:1px 6px;border-radius:10px;font-weight:700;}
+    .b{background:#ede9fe;color:#4c1d95;padding:1px 6px;border-radius:10px;}
+    footer{font-size:7pt;color:#888;margin-top:10px;border-top:1px solid #ddd;padding-top:6px;}
+    @media print{body{margin:0;}}</style></head><body>
+    <div class="hdr"><h1>🏥 Nursing Home Directory</h1>
+    <p style="font-size:8pt;opacity:.7;margin:3px 0 0">${list.length} facilities · John J. Pershing VA Medical Center · ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</p></div>
+    <div class="gold"></div>
+    <table><thead><tr><th>Name</th><th>City</th><th>County</th><th>State</th><th>Phone</th><th>Fax</th><th>VA Contract</th><th>Behavioral Unit</th></tr></thead>
+    <tbody>${list.map(h => `<tr><td><strong>${h.name}</strong></td><td>${h.city||''}</td><td>${h.county||''}</td><td>${h.state||''}</td><td>${h.phone||''}</td><td>${h.fax||''}</td><td>${h.va_contract ? `<span class="c">${h.va_contract}</span>` : ''}</td><td>${h.behavioral_unit ? `<span class="b">${h.behavioral_unit}</span>` : ''}</td></tr>`).join('')}
+    </tbody></table>
+    <footer>Always call ahead to verify availability. John J. Pershing VA Medical Center, Poplar Bluff MO.</footer>
     </body></html>`
     const w = window.open('', '_blank')
     if (w) { w.document.write(html); w.document.close(); w.print() }
@@ -299,46 +444,85 @@ export default function App() {
           <button onClick={clearFilters} className="px-3 py-2 rounded-lg border-2 border-white/18 text-white/60 text-xs font-body whitespace-nowrap active:bg-white/10 transition-all">✕ Clear</button>
         </div>
 
-        {/* 4 Category filter chips */}
-        <div className="flex gap-1.5 px-3 pb-2 overflow-x-auto no-scrollbar">
-          {CATEGORIES.map(cat => (
-            <button key={cat.value} onClick={() => { setCategoryFilter(cat.value); setPage(1); scrollRef.current?.scrollTo(0, 0) }}
-              className={`chip flex-shrink-0 px-3 py-1.5 rounded-full border text-xs whitespace-nowrap transition-all font-body font-semibold ${
-                categoryFilter === cat.value
-                  ? 'bg-[#C8941A] border-[#C8941A] text-[#0F2347]'
-                  : 'bg-white/8 border-white/20 text-white/75'}`}>
-              {cat.icon} {cat.label}
-            </button>
-          ))}
-        </div>
+        {/* Category chips — Resources only */}
+        {view === 'resources' && (
+          <div className="flex gap-1.5 px-3 pb-2 overflow-x-auto no-scrollbar">
+            {CATEGORIES.map(cat => (
+              <button key={cat.value} onClick={() => { setCategoryFilter(cat.value); setPage(1); scrollRef.current?.scrollTo(0, 0) }}
+                className={`chip flex-shrink-0 px-3 py-1.5 rounded-full border text-xs whitespace-nowrap transition-all font-body font-semibold ${
+                  categoryFilter === cat.value
+                    ? 'bg-[#C8941A] border-[#C8941A] text-[#0F2347]'
+                    : 'bg-white/8 border-white/20 text-white/75'}`}>
+                {cat.icon} {cat.label}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* State + County */}
-        <div className="flex gap-2 px-3 pb-2">
-          {[
-            { id: 'state', value: stateFilter, label: 'All States', options: STATES.map(s => ({ v: s, l: s === 'MO' ? 'Missouri' : 'Arkansas' })), onChange: (v: string) => { setStateFilter(v); setCountyFilter(''); setPage(1) } },
-            { id: 'county', value: countyFilter, label: 'All Counties', options: counties.filter(c => !stateFilter || resources.some(r => r.county === c && r.state === stateFilter)).map(c => ({ v: c, l: c })), onChange: (v: string) => { setCountyFilter(v); setPage(1) } },
-          ].map(sel => (
-            <select key={sel.id} value={sel.value} onChange={e => sel.onChange(e.target.value)}
-              className="flex-1 px-2.5 py-2 rounded-lg border-2 border-white/15 bg-white/10 text-white font-body text-xs outline-none focus:border-[#C8941A] transition-all cursor-pointer"
-              style={{ colorScheme: 'dark' }}>
-              <option value="" style={{ background: '#0F2347' }}>{sel.label}</option>
-              {sel.options.map(o => <option key={o.v} value={o.v} style={{ background: '#0F2347' }}>{o.l}</option>)}
-            </select>
-          ))}
-        </div>
+        {/* Resources filters: State + County */}
+        {view !== 'nursing_homes' && (
+          <div className="flex gap-2 px-3 pb-2">
+            {[
+              { id: 'state', value: stateFilter, label: 'All States', options: STATES.map(s => ({ v: s, l: s === 'MO' ? 'Missouri' : 'Arkansas' })), onChange: (v: string) => { setStateFilter(v); setCountyFilter(''); setPage(1) } },
+              { id: 'county', value: countyFilter, label: 'All Counties', options: counties.filter(c => !stateFilter || resources.some(r => r.county === c && r.state === stateFilter)).map(c => ({ v: c, l: c })), onChange: (v: string) => { setCountyFilter(v); setPage(1) } },
+            ].map(sel => (
+              <select key={sel.id} value={sel.value} onChange={e => sel.onChange(e.target.value)}
+                className="flex-1 px-2.5 py-2 rounded-lg border-2 border-white/15 bg-white/10 text-white font-body text-xs outline-none focus:border-[#C8941A] transition-all cursor-pointer"
+                style={{ colorScheme: 'dark' }}>
+                <option value="" style={{ background: '#0F2347' }}>{sel.label}</option>
+                {sel.options.map(o => <option key={o.v} value={o.v} style={{ background: '#0F2347' }}>{o.l}</option>)}
+              </select>
+            ))}
+          </div>
+        )}
+
+        {/* Nursing Homes filters: State, County, VA Contract, Behavioral */}
+        {view === 'nursing_homes' && (
+          <>
+            <div className="flex gap-2 px-3 pb-1">
+              <select value={nhStateFilter} onChange={e => { setNhStateFilter(e.target.value); setNhCountyFilter('') }}
+                className="flex-1 px-2.5 py-2 rounded-lg border-2 border-white/15 bg-white/10 text-white font-body text-xs outline-none focus:border-[#C8941A] transition-all cursor-pointer"
+                style={{ colorScheme: 'dark' }}>
+                <option value="" style={{ background: '#0F2347' }}>All States</option>
+                {NH_STATES.map(s => <option key={s.code} value={s.code} style={{ background: '#0F2347' }}>{s.label}</option>)}
+              </select>
+              <select value={nhCountyFilter} onChange={e => setNhCountyFilter(e.target.value)}
+                className="flex-1 px-2.5 py-2 rounded-lg border-2 border-white/15 bg-white/10 text-white font-body text-xs outline-none focus:border-[#C8941A] transition-all cursor-pointer"
+                style={{ colorScheme: 'dark' }}>
+                <option value="" style={{ background: '#0F2347' }}>All Counties</option>
+                {nhCounties
+                  .filter(c => !nhStateFilter || nursingHomes.some(h => h.county === c && h.state === nhStateFilter))
+                  .map(c => <option key={c} value={c} style={{ background: '#0F2347' }}>{c}</option>)}
+              </select>
+            </div>
+            <div className="flex gap-2 px-3 pb-2">
+              <select value={nhContractFilter} onChange={e => setNhContractFilter(e.target.value)}
+                className="flex-1 px-2.5 py-2 rounded-lg border-2 border-white/15 bg-white/10 text-white font-body text-xs outline-none focus:border-[#C8941A] transition-all cursor-pointer"
+                style={{ colorScheme: 'dark' }}>
+                <option value="" style={{ background: '#0F2347' }}>All Contracts</option>
+                <option value="yes" style={{ background: '#0F2347' }}>✓ Has VA Contract</option>
+                <option value="no" style={{ background: '#0F2347' }}>No VA Contract</option>
+              </select>
+              <select value={nhBehavioralFilter} onChange={e => setNhBehavioralFilter(e.target.value)}
+                className="flex-1 px-2.5 py-2 rounded-lg border-2 border-white/15 bg-white/10 text-white font-body text-xs outline-none focus:border-[#C8941A] transition-all cursor-pointer"
+                style={{ colorScheme: 'dark' }}>
+                <option value="" style={{ background: '#0F2347' }}>All Behavioral</option>
+                <option value="yes" style={{ background: '#0F2347' }}>Has Behavioral Unit</option>
+                <option value="no" style={{ background: '#0F2347' }}>No Behavioral Unit</option>
+              </select>
+            </div>
+          </>
+        )}
 
         {/* Tabs */}
         <div className="flex bg-[#0F2347]">
-          {([['resources', '📋 Resources'], ['hotlines', '📞 Hotlines']] as [View, string][]).map(([v, label]) => (
+          {([['resources', '📋 Resources'], ['hotlines', '📞 Hotlines'], ['nursing_homes', '🏥 Nursing Homes']] as [View, string][]).map(([v, label]) => (
             <button key={v} onClick={() => { setView(v); scrollRef.current?.scrollTo(0, 0) }}
-              className={`flex-1 py-2.5 font-display text-xs tracking-widest uppercase border-b-[3px] transition-all ${
+              className={`flex-1 py-2.5 font-display text-[0.6rem] tracking-widest uppercase border-b-[3px] transition-all ${
                 view === v ? 'text-[#F0C84A] border-[#C8941A]' : 'text-white/40 border-transparent'}`}>
               {label}
             </button>
           ))}
-          <button onClick={printCounty} className="flex-[0.55] py-2.5 font-display text-xs tracking-widest uppercase text-white/40 border-b-[3px] border-transparent">
-            🖨️ Print
-          </button>
         </div>
 
         {/* Admin banner */}
@@ -347,7 +531,10 @@ export default function App() {
             <span className="font-display text-white text-xs tracking-wide">🛡️ ADMIN MODE</span>
             <span className="text-white/60 text-xs">{adminEmail}</span>
             <div className="ml-auto flex gap-1.5 flex-wrap">
-              <button onClick={() => { setEditResource({}); openModal('resource') }} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">➕ {view === 'hotlines' ? 'Hotline' : 'Resource'}</button>
+              {view === 'nursing_homes'
+                ? <button onClick={() => { setEditNH({}); openModal('edit_nh') }} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">➕ Nursing Home</button>
+                : <button onClick={() => { setEditResource({}); openModal('resource') }} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">➕ {view === 'hotlines' ? 'Hotline' : 'Resource'}</button>
+              }
               <button onClick={() => openModal('settings')} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">⚙️ Settings</button>
             </div>
           </div>
@@ -502,6 +689,81 @@ export default function App() {
             )}
           </>
         )}
+        {/* ── NURSING HOMES VIEW ── */}
+        {!loading && view === 'nursing_homes' && (() => {
+          const nhList = filteredNH()
+          return (
+            <>
+              <div className="flex items-center justify-between px-3.5 py-2.5">
+                <span className="font-display text-[#1B3A6B] text-sm font-semibold">
+                  {nhList.length} <span className="text-[#C8941A]">facilities</span>
+                </span>
+                <button onClick={printNHList}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 font-body active:bg-gray-100 transition-all">
+                  🖨️ Print List
+                </button>
+              </div>
+
+              {nhList.length === 0 ? (
+                <div className="text-center py-16 px-5">
+                  <div className="text-5xl mb-3">🔍</div>
+                  <h3 className="font-display text-gray-700 text-base mb-1">No facilities found</h3>
+                  <p className="text-gray-400 text-sm">Try different filters or clear your search.</p>
+                  <button onClick={clearFilters} className="mt-4 px-4 py-2 bg-[#1B3A6B] text-white rounded-lg text-sm font-body">Clear filters</button>
+                </div>
+              ) : (
+                <div className="flex flex-col divide-y divide-gray-100">
+                  {nhList.map(h => (
+                    <div key={h.id} className="bg-white px-3.5 py-3">
+                      <div className="font-display font-semibold text-[#1B3A6B] text-sm leading-tight mb-0.5">🏥 {h.name}</div>
+                      {(h.city || h.county) && (
+                        <p className="text-xs text-gray-400 mb-1.5">📍 {[h.city, h.county ? h.county + ' County' : '', h.state].filter(Boolean).join(', ')}</p>
+                      )}
+                      {h.address && <p className="text-xs text-gray-400 mb-1.5">🏢 {h.address}</p>}
+                      <div className="flex flex-wrap gap-1.5 mb-1.5">
+                        {h.va_contract && (
+                          <span className="inline-block text-[0.6rem] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-green-100 text-green-800">✓ {h.va_contract}</span>
+                        )}
+                        {h.behavioral_unit && (
+                          <span className="inline-block text-[0.6rem] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">{h.behavioral_unit}</span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {h.phone && (
+                          <a href={`tel:${h.phone.replace(/[^0-9+]/g, '')}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F2F4F8] border border-gray-200 text-[#1B3A6B] font-semibold text-sm active:bg-[#1B3A6B] active:text-white transition-all">
+                            📞 {h.phone}
+                          </a>
+                        )}
+                        {h.fax && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 text-xs font-body">
+                            📠 {h.fax}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button onClick={() => { setShareNHTarget(h); openModal('share_nh') }}
+                          className="px-2.5 py-1 rounded text-xs bg-[#1B3A6B]/10 text-[#1B3A6B] font-body active:bg-[#1B3A6B] active:text-white transition-all">
+                          📤 Share
+                        </button>
+                        <button onClick={() => printNHCard(h)}
+                          className="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 font-body active:bg-gray-300 transition-all">
+                          🖨️ Print
+                        </button>
+                        {isAdmin && (
+                          <button onClick={() => { setEditNH(h); openModal('edit_nh') }}
+                            className="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 font-body active:bg-gray-300 transition-all">
+                            ✏️ Edit
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )
+        })()}
       </div>
 
       {/* ── CRISIS FLOAT BUTTON ── */}
@@ -581,6 +843,23 @@ export default function App() {
             {modal === 'settings' && isAdmin && <>
               <ModalHeader title="⚙️ Settings" color="bg-amber-800" onClose={closeModal} />
               <SettingsPanel resources={resources} hotlines={hotlines} onClose={closeModal} />
+            </>}
+
+            {/* NH SHARE */}
+            {modal === 'share_nh' && shareNHTarget && <>
+              <ModalHeader title="📤 Share Nursing Home" color="bg-[#1B3A6B]" onClose={closeModal} />
+              <NHShareForm home={shareNHTarget} onShare={shareNursingHome} onCancel={closeModal} />
+            </>}
+
+            {/* NH EDIT / ADD */}
+            {modal === 'edit_nh' && editNH !== null && <>
+              <ModalHeader title={editNH.id ? '✏️ Edit Nursing Home' : '➕ Add Nursing Home'} color="bg-[#1B3A6B]" onClose={closeModal} />
+              <NHForm
+                initial={editNH}
+                onSave={saveNursingHome}
+                onDelete={editNH.id ? () => deleteNursingHome(editNH.id!, editNH.name!) : undefined}
+                onCancel={closeModal}
+              />
             </>}
 
           </div>
@@ -779,6 +1058,76 @@ function SettingsPanel({ resources, hotlines, onClose }:
       </div>
       <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-400 font-body">
         <p>To add staff accounts, go to your Supabase dashboard → Authentication → Invite user.</p>
+      </div>
+    </div>
+  )
+}
+
+function NHForm({ initial, onSave, onDelete, onCancel }:
+  { initial: Partial<NursingHome>; onSave: (d: Partial<NursingHome>) => void; onDelete?: () => void; onCancel: () => void }) {
+  const [d, setD] = useState<Partial<NursingHome>>(initial)
+  const set = (k: keyof NursingHome, v: string) => setD(prev => ({ ...prev, [k]: v }))
+  return (
+    <div className="p-4 flex flex-col gap-3">
+      <Field label="Facility Name *"><input value={d.name || ''} onChange={e => set('name', e.target.value)} placeholder="Nursing home name" className={fi} /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="State">
+          <select value={d.state || 'MO'} onChange={e => set('state', e.target.value)} className={fi}>
+            {NH_STATES.map(s => <option key={s.code} value={s.code}>{s.label}</option>)}
+          </select>
+        </Field>
+        <Field label="County"><input value={d.county || ''} onChange={e => set('county', e.target.value)} className={fi} /></Field>
+      </div>
+      <Field label="City"><input value={d.city || ''} onChange={e => set('city', e.target.value)} className={fi} /></Field>
+      <Field label="Address"><input value={d.address || ''} onChange={e => set('address', e.target.value)} className={fi} /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Phone"><input type="tel" value={d.phone || ''} onChange={e => set('phone', e.target.value)} placeholder="555-555-5555" className={fi} /></Field>
+        <Field label="Fax"><input type="tel" value={d.fax || ''} onChange={e => set('fax', e.target.value)} placeholder="555-555-5555" className={fi} /></Field>
+      </div>
+      <Field label="VA Contract">
+        <select value={d.va_contract || ''} onChange={e => set('va_contract', e.target.value)} className={fi}>
+          <option value="">None</option>
+          <option value="Contract">Contract</option>
+          <option value="CCN only">CCN only</option>
+          <option value="SSR only/Contract">SSR only/Contract</option>
+        </select>
+      </Field>
+      <Field label="Behavioral Unit"><input value={d.behavioral_unit || ''} onChange={e => set('behavioral_unit', e.target.value)} placeholder="e.g. Secure unit, Memory care" className={fi} /></Field>
+      <div className="flex gap-2 pt-2 border-t border-gray-100">
+        {onDelete && <button onClick={onDelete} className="px-3 py-2.5 rounded-lg bg-red-600 text-white text-sm font-body">Delete</button>}
+        <button onClick={onCancel} className="flex-1 py-2.5 rounded-lg bg-gray-100 text-gray-600 text-sm font-body">Cancel</button>
+        <button onClick={() => onSave(d)} className="flex-1 py-2.5 rounded-lg bg-[#1B3A6B] text-white text-sm font-body font-semibold">Save</button>
+      </div>
+    </div>
+  )
+}
+
+function NHShareForm({ home, onShare, onCancel }:
+  { home: NursingHome; onShare: (h: NursingHome, method: 'email' | 'sms', contact: string) => void; onCancel: () => void }) {
+  const [method, setMethod]   = useState<'email' | 'sms'>('email')
+  const [contact, setContact] = useState('')
+  return (
+    <div className="p-4 flex flex-col gap-3">
+      <div className="bg-[#F2F4F8] rounded-lg p-3">
+        <div className="font-semibold text-sm text-[#1B3A6B] font-body">🏥 {home.name}</div>
+        <div className="text-xs text-gray-400">{[home.city, home.county ? home.county + ' County' : '', home.state].filter(Boolean).join(', ')}</div>
+        {home.phone && <div className="text-xs text-gray-400">{home.phone}</div>}
+        {home.va_contract && <div className="text-[0.6rem] font-bold text-green-700 mt-0.5">✓ {home.va_contract}</div>}
+      </div>
+      <div className="flex gap-2">
+        {(['email', 'sms'] as const).map(m => (
+          <button key={m} onClick={() => setMethod(m)}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-body border-2 transition-all ${method === m ? 'bg-[#1B3A6B] text-white border-[#1B3A6B]' : 'bg-white text-gray-500 border-gray-200'}`}>
+            {m === 'email' ? '📧 Email' : '💬 Text'}
+          </button>
+        ))}
+      </div>
+      <input type={method === 'email' ? 'email' : 'tel'} value={contact} onChange={e => setContact(e.target.value)}
+        placeholder={method === 'email' ? 'email@example.com' : '555-555-5555'}
+        className={fi} />
+      <div className="flex gap-2">
+        <button onClick={onCancel} className="flex-1 py-2.5 rounded-lg bg-gray-100 text-gray-600 text-sm font-body">Cancel</button>
+        <button onClick={() => contact && onShare(home, method, contact)} className="flex-1 py-2.5 rounded-lg bg-[#1B3A6B] text-white text-sm font-body font-semibold">Send</button>
       </div>
     </div>
   )

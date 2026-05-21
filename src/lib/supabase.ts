@@ -30,6 +30,21 @@ export type Hotline = {
   notes: string
 }
 
+export type NursingHome = {
+  id: string
+  name: string
+  county: string
+  city: string
+  state: string
+  address: string
+  phone: string
+  fax: string
+  behavioral_unit: string
+  va_contract: string
+  pinned: boolean
+  created_at: string
+}
+
 export type Suggestion = {
   id: string
   name: string
@@ -67,3 +82,10 @@ export const HOTLINE_CATEGORIES = [
 ]
 
 export const STATES = ['MO', 'AR']
+
+export const NH_STATES = [
+  { code: 'MO', label: 'Missouri' },
+  { code: 'AR', label: 'Arkansas' },
+  { code: 'KS', label: 'Kansas' },
+  { code: 'IL', label: 'Illinois' },
+]
