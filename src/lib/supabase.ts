@@ -45,6 +45,27 @@ export type NursingHome = {
   created_at: string
 }
 
+export type CareHome = {
+  id: string
+  name: string
+  county: string
+  city: string
+  state: string
+  address: string
+  phone: string
+  fax: string
+  facility_type: 'RCF' | 'ALF' | 'ICF'
+  pinned: boolean
+  created_at: string
+}
+
+export const CARE_HOME_TYPES = ['RCF', 'ALF', 'ICF'] as const
+export const CARE_HOME_TYPE_LABELS: Record<string, string> = {
+  RCF: 'Residential Care Facility',
+  ALF: 'Assisted Living Facility',
+  ICF: 'Intermediate Care Facility',
+}
+
 export type Suggestion = {
   id: string
   name: string

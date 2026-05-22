@@ -1,10 +1,10 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { supabase, Resource, Hotline, NursingHome, TYPE_META, RESOURCE_TYPES, HOTLINE_CATEGORIES, STATES, NH_STATES } from '@/lib/supabase'
+import { supabase, Resource, Hotline, NursingHome, CareHome, TYPE_META, RESOURCE_TYPES, HOTLINE_CATEGORIES, STATES, NH_STATES, CARE_HOME_TYPES, CARE_HOME_TYPE_LABELS } from '@/lib/supabase'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type View = 'resources' | 'hotlines' | 'nursing_homes'
-type Modal = 'none' | 'crisis' | 'resource' | 'hotline' | 'share' | 'suggest' | 'login' | 'settings' | 'share_nh' | 'edit_nh'
+type View = 'resources' | 'hotlines' | 'nursing_homes' | 'care_homes'
+type Modal = 'none' | 'crisis' | 'resource' | 'hotline' | 'share' | 'suggest' | 'login' | 'settings' | 'share_nh' | 'edit_nh' | 'share_ch' | 'edit_ch'
 
 const PAGE_SIZE = 30
 
@@ -65,6 +65,15 @@ export default function App() {
   const [shareNHTarget, setShareNHTarget]           = useState<NursingHome | null>(null)
   const [editNH, setEditNH]                         = useState<Partial<NursingHome> | null>(null)
 
+  // Care Homes
+  const [careHomes, setCareHomes]                   = useState<CareHome[]>([])
+  const [chCounties, setChCounties]                 = useState<string[]>([])
+  const [chStateFilter, setChStateFilter]           = useState('')
+  const [chCountyFilter, setChCountyFilter]         = useState('')
+  const [chTypeFilter, setChTypeFilter]             = useState('')
+  const [shareCHTarget, setShareCHTarget]           = useState<CareHome | null>(null)
+  const [editCH, setEditCH]                         = useState<Partial<CareHome> | null>(null)
+
   // Refs
   const scrollRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -87,10 +96,11 @@ export default function App() {
 
   async function loadAll() {
     setLoading(true)
-    const [{ data: res }, { data: hot }, { data: nh }] = await Promise.all([
+    const [{ data: res }, { data: hot }, { data: nh }, { data: ch }] = await Promise.all([
       supabase.from('resources').select('*').order('pinned', { ascending: false }).order('name').limit(2000),
       supabase.from('hotlines').select('*').order('category').order('name'),
       supabase.from('nursing_homes').select('*').order('state').order('county').order('name').limit(2000),
+      supabase.from('care_homes').select('*').order('state').order('county').order('name').limit(2000),
     ])
     if (res) setResources(res)
     if (hot) setHotlines(hot)
@@ -98,6 +108,11 @@ export default function App() {
       setNursingHomes(nh)
       const allNHCounties = Array.from(new Set(nh.map((h: NursingHome) => h.county).filter(Boolean))).sort() as string[]
       setNhCounties(allNHCounties)
+    }
+    if (ch) {
+      setCareHomes(ch)
+      const allCHCounties = Array.from(new Set(ch.map((h: CareHome) => h.county).filter(Boolean))).sort() as string[]
+      setChCounties(allCHCounties)
     }
     if (res) {
       const allCounties = Array.from(new Set(res.map((r: Resource) => r.county).filter(Boolean))).sort() as string[]
@@ -152,6 +167,21 @@ export default function App() {
     })
   }, [nursingHomes, search, nhStateFilter, nhCountyFilter, nhContractFilter, nhBehavioralFilter])
 
+  const filteredCH = useCallback(() => {
+    const q = search.toLowerCase()
+    return careHomes.filter(h => {
+      if (chStateFilter && h.state !== chStateFilter) return false
+      if (chCountyFilter && h.county !== chCountyFilter) return false
+      if (chTypeFilter && h.facility_type !== chTypeFilter) return false
+      if (q) {
+        const hay = [h.name, h.city, h.county, h.state, h.phone, h.address, h.facility_type]
+          .join(' ').toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+      return true
+    })
+  }, [careHomes, search, chStateFilter, chCountyFilter, chTypeFilter])
+
   const results   = filtered()
   const totalPages = Math.ceil(results.length / PAGE_SIZE)
   const pageItems  = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -159,6 +189,7 @@ export default function App() {
   function clearFilters() {
     setSearch(''); setCategoryFilter(''); setStateFilter(''); setCountyFilter('')
     setNhStateFilter(''); setNhCountyFilter(''); setNhContractFilter(''); setNhBehavioralFilter('')
+    setChStateFilter(''); setChCountyFilter(''); setChTypeFilter('')
     setPage(1); scrollRef.current?.scrollTo(0, 0)
   }
 
@@ -251,6 +282,32 @@ export default function App() {
     setModal('none'); loadAll()
   }
 
+  async function saveCareHome(data: Partial<CareHome>) {
+    if (!data.name) return
+    const payload = {
+      name:          data.name,
+      county:        data.county || '',
+      city:          data.city || '',
+      state:         data.state || 'MO',
+      address:       data.address || '',
+      phone:         data.phone || '',
+      fax:           data.fax || '',
+      facility_type: data.facility_type || 'RCF',
+    }
+    if (data.id) {
+      await supabase.from('care_homes').update(payload).eq('id', data.id)
+    } else {
+      await supabase.from('care_homes').insert(payload)
+    }
+    setModal('none'); loadAll()
+  }
+
+  async function deleteCareHome(id: string, name: string) {
+    if (!confirm(`Delete "${name}"?`)) return
+    await supabase.from('care_homes').delete().eq('id', id)
+    setModal('none'); loadAll()
+  }
+
   async function logAudit(action: string, table: string, id: string, name: string) {
     await supabase.from('audit_log').insert({ action, table_name: table, record_id: id, record_name: name, changed_by: adminEmail })
   }
@@ -295,6 +352,86 @@ export default function App() {
       <table><thead><tr><th width="28%">Name</th><th width="14%">City</th><th width="16%">Phone</th><th width="24%">Address</th><th>Notes</th></tr></thead>
       <tbody>${items.sort((a,b)=>a.name.localeCompare(b.name)).map(r=>`<tr><td>${r.pinned?'<span class="pin">⭐ </span>':''}${r.name}</td><td>${r.city||''}</td><td><strong>${r.phone||''}</strong></td><td>${r.address||''}</td><td style="font-size:7pt;font-style:italic;color:#92400E;">${r.notes||''}</td></tr>`).join('')}</tbody></table>`).join('')}
     <footer>Always call ahead to verify hours and availability. John J. Pershing VA Medical Center, Poplar Bluff MO.</footer>
+    </body></html>`
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close(); w.print() }
+  }
+
+  // ─── CH Share ────────────────────────────────────────────────────────────────
+  async function shareCareHome(h: CareHome, method: 'email' | 'sms', contact: string) {
+    const loc = [h.city, h.county ? h.county + ' County' : '', h.state].filter(Boolean).join(', ')
+    const body = [
+      `Care Facility Referral: ${h.name}`,
+      `Type: ${CARE_HOME_TYPE_LABELS[h.facility_type] || h.facility_type}`,
+      loc ? `Location: ${loc}` : '',
+      h.address ? `Address: ${h.address}` : '',
+      h.phone ? `Phone: ${h.phone}` : '',
+      h.fax ? `Fax: ${h.fax}` : '',
+      '',
+      'From: Veterans Resource Directory — John J. Pershing VA Medical Center',
+    ].filter(l => l !== undefined && (l !== '' || l === '')).join('\n').replace(/\n{3,}/g, '\n\n').trim()
+    await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method, contact, resource: h, text: body }),
+    })
+    setModal('none')
+    alert(`Sent to ${contact}`)
+  }
+
+  // ─── CH Print ────────────────────────────────────────────────────────────────
+  function printCHCard(h: CareHome) {
+    const loc = [h.city, h.county ? h.county + ' County' : '', h.state].filter(Boolean).join(', ')
+    const typeLabel = CARE_HOME_TYPE_LABELS[h.facility_type] || h.facility_type
+    const html = `<html><head><title>${h.name}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+    <style>body{font-family:'Source Sans 3',sans-serif;font-size:10pt;color:#111;max-width:680px;margin:0 auto;padding:20px;}
+    h1{font-family:'Oswald',sans-serif;font-size:17pt;margin:0 0 3px;}
+    .hdr{background:#0F2347;color:#fff;padding:13px 17px;margin-bottom:4px;}
+    .gold{background:#C8941A;height:3px;margin-bottom:16px;}
+    .row{display:flex;gap:10px;margin-bottom:9px;align-items:flex-start;}
+    .lbl{font-weight:600;font-size:8pt;text-transform:uppercase;letter-spacing:.08em;color:#555;min-width:100px;padding-top:1px;}
+    .val{font-size:10pt;}
+    .badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:8pt;font-weight:700;}
+    .typ{background:#dbeafe;color:#1e40af;}
+    footer{font-size:7pt;color:#888;margin-top:20px;border-top:1px solid #ddd;padding-top:8px;}
+    @media print{body{margin:0;padding:10px;}}</style></head><body>
+    <div class="hdr"><h1>🏠 ${h.name}</h1>
+    <p style="font-size:8pt;opacity:.7;margin:3px 0 0">${loc} · Care Facility Referral</p></div>
+    <div class="gold"></div>
+    <div class="row"><span class="lbl">Facility Type</span><span class="val"><span class="badge typ">${typeLabel}</span></span></div>
+    ${h.address ? `<div class="row"><span class="lbl">Address</span><span class="val">${h.address}</span></div>` : ''}
+    ${h.phone ? `<div class="row"><span class="lbl">Phone</span><span class="val"><strong>${h.phone}</strong></span></div>` : ''}
+    ${h.fax ? `<div class="row"><span class="lbl">Fax</span><span class="val">${h.fax}</span></div>` : ''}
+    <footer>John J. Pershing VA Medical Center · Poplar Bluff MO · ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</footer>
+    </body></html>`
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close(); w.print() }
+  }
+
+  function printCHList() {
+    const list = filteredCH()
+    if (!list.length) { alert('No care facilities match your current filters.'); return }
+    const html = `<html><head><title>Care Facility Directory</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+    <style>body{font-family:'Source Sans 3',sans-serif;font-size:8pt;color:#111;}
+    h1{font-family:'Oswald',sans-serif;font-size:15pt;margin:0;}
+    .hdr{background:#0F2347;color:#fff;padding:11px 15px;margin-bottom:4px;}
+    .gold{background:#C8941A;height:3px;margin-bottom:10px;}
+    table{width:100%;border-collapse:collapse;font-size:7.5pt;}
+    th{background:#1B3A6B;color:#fff;padding:4px 6px;text-align:left;}
+    td{padding:4px 6px;border-bottom:1px solid #eee;vertical-align:top;}
+    tr:nth-child(even) td{background:#F8F9FF;}
+    .t{background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:10px;font-weight:700;}
+    footer{font-size:7pt;color:#888;margin-top:10px;border-top:1px solid #ddd;padding-top:6px;}
+    @media print{body{margin:0;}}</style></head><body>
+    <div class="hdr"><h1>🏠 Care Facility Directory</h1>
+    <p style="font-size:8pt;opacity:.7;margin:3px 0 0">${list.length} facilities · John J. Pershing VA Medical Center · ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</p></div>
+    <div class="gold"></div>
+    <table><thead><tr><th>Name</th><th>Type</th><th>City</th><th>County</th><th>State</th><th>Phone</th><th>Fax</th></tr></thead>
+    <tbody>${list.map(h => `<tr><td><strong>${h.name}</strong></td><td><span class="t">${h.facility_type}</span></td><td>${h.city||''}</td><td>${h.county||''}</td><td>${h.state||''}</td><td>${h.phone||''}</td><td>${h.fax||''}</td></tr>`).join('')}
+    </tbody></table>
+    <footer>Always call ahead to verify availability. John J. Pershing VA Medical Center, Poplar Bluff MO.</footer>
     </body></html>`
     const w = window.open('', '_blank')
     if (w) { w.document.write(html); w.document.close(); w.print() }
@@ -460,7 +597,7 @@ export default function App() {
         )}
 
         {/* Resources filters: State + County */}
-        {view !== 'nursing_homes' && (
+        {view !== 'nursing_homes' && view !== 'care_homes' && (
           <div className="flex gap-2 px-3 pb-2">
             {[
               { id: 'state', value: stateFilter, label: 'All States', options: STATES.map(s => ({ v: s, l: s === 'MO' ? 'Missouri' : 'Arkansas' })), onChange: (v: string) => { setStateFilter(v); setCountyFilter(''); setPage(1) } },
@@ -474,6 +611,36 @@ export default function App() {
               </select>
             ))}
           </div>
+        )}
+
+        {/* Care Homes filters: State, County, Facility Type */}
+        {view === 'care_homes' && (
+          <>
+            <div className="flex gap-2 px-3 pb-1">
+              <select value={chStateFilter} onChange={e => { setChStateFilter(e.target.value); setChCountyFilter('') }}
+                className="flex-1 px-2.5 py-2 rounded-lg border-2 border-white/15 bg-white/10 text-white font-body text-xs outline-none focus:border-[#C8941A] transition-all cursor-pointer"
+                style={{ colorScheme: 'dark' }}>
+                <option value="" style={{ background: '#0F2347' }}>All States</option>
+                {NH_STATES.map(s => <option key={s.code} value={s.code} style={{ background: '#0F2347' }}>{s.label}</option>)}
+              </select>
+              <select value={chCountyFilter} onChange={e => setChCountyFilter(e.target.value)}
+                className="flex-1 px-2.5 py-2 rounded-lg border-2 border-white/15 bg-white/10 text-white font-body text-xs outline-none focus:border-[#C8941A] transition-all cursor-pointer"
+                style={{ colorScheme: 'dark' }}>
+                <option value="" style={{ background: '#0F2347' }}>All Counties</option>
+                {chCounties
+                  .filter(c => !chStateFilter || careHomes.some(h => h.county === c && h.state === chStateFilter))
+                  .map(c => <option key={c} value={c} style={{ background: '#0F2347' }}>{c}</option>)}
+              </select>
+            </div>
+            <div className="flex gap-2 px-3 pb-2">
+              <select value={chTypeFilter} onChange={e => setChTypeFilter(e.target.value)}
+                className="flex-1 px-2.5 py-2 rounded-lg border-2 border-white/15 bg-white/10 text-white font-body text-xs outline-none focus:border-[#C8941A] transition-all cursor-pointer"
+                style={{ colorScheme: 'dark' }}>
+                <option value="" style={{ background: '#0F2347' }}>All Facility Types</option>
+                {CARE_HOME_TYPES.map(t => <option key={t} value={t} style={{ background: '#0F2347' }}>{CARE_HOME_TYPE_LABELS[t]} ({t})</option>)}
+              </select>
+            </div>
+          </>
         )}
 
         {/* Nursing Homes filters: State, County, VA Contract, Behavioral */}
@@ -516,7 +683,7 @@ export default function App() {
 
         {/* Tabs */}
         <div className="flex bg-[#0F2347]">
-          {([['resources', '📋 Resources'], ['hotlines', '📞 Hotlines'], ['nursing_homes', '🏥 Nursing Homes']] as [View, string][]).map(([v, label]) => (
+          {([['resources', '📋 Resources'], ['hotlines', '📞 Hotlines'], ['nursing_homes', '🏥 Nursing Homes'], ['care_homes', '🏠 Care Homes']] as [View, string][]).map(([v, label]) => (
             <button key={v} onClick={() => { setView(v); scrollRef.current?.scrollTo(0, 0) }}
               className={`flex-1 py-2.5 font-display text-[0.6rem] tracking-widest uppercase border-b-[3px] transition-all ${
                 view === v ? 'text-[#F0C84A] border-[#C8941A]' : 'text-white/40 border-transparent'}`}>
@@ -533,6 +700,8 @@ export default function App() {
             <div className="ml-auto flex gap-1.5 flex-wrap">
               {view === 'nursing_homes'
                 ? <button onClick={() => { setEditNH({}); openModal('edit_nh') }} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">➕ Nursing Home</button>
+                : view === 'care_homes'
+                ? <button onClick={() => { setEditCH({}); openModal('edit_ch') }} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">➕ Care Home</button>
                 : <button onClick={() => { setEditResource({}); openModal('resource') }} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">➕ {view === 'hotlines' ? 'Hotline' : 'Resource'}</button>
               }
               <button onClick={() => openModal('settings')} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">⚙️ Settings</button>
@@ -689,6 +858,79 @@ export default function App() {
             )}
           </>
         )}
+        {/* ── CARE HOMES VIEW ── */}
+        {!loading && view === 'care_homes' && (() => {
+          const chList = filteredCH()
+          return (
+            <>
+              <div className="flex items-center justify-between px-3.5 py-2.5">
+                <span className="font-display text-[#1B3A6B] text-sm font-semibold">
+                  {chList.length} <span className="text-[#C8941A]">facilities</span>
+                </span>
+                <button onClick={printCHList}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 font-body active:bg-gray-100 transition-all">
+                  🖨️ Print List
+                </button>
+              </div>
+
+              {chList.length === 0 ? (
+                <div className="text-center py-16 px-5">
+                  <div className="text-5xl mb-3">🔍</div>
+                  <h3 className="font-display text-gray-700 text-base mb-1">No facilities found</h3>
+                  <p className="text-gray-400 text-sm">Try different filters or clear your search.</p>
+                  <button onClick={clearFilters} className="mt-4 px-4 py-2 bg-[#1B3A6B] text-white rounded-lg text-sm font-body">Clear filters</button>
+                </div>
+              ) : (
+                <div className="flex flex-col divide-y divide-gray-100">
+                  {chList.map(h => (
+                    <div key={h.id} className="bg-white px-3.5 py-3">
+                      <div className="font-display font-semibold text-[#1B3A6B] text-sm leading-tight mb-0.5">🏠 {h.name}</div>
+                      {(h.city || h.county) && (
+                        <p className="text-xs text-gray-400 mb-1.5">📍 {[h.city, h.county ? h.county + ' County' : '', h.state].filter(Boolean).join(', ')}</p>
+                      )}
+                      {h.address && <p className="text-xs text-gray-400 mb-1.5">🏢 {h.address}</p>}
+                      <div className="flex flex-wrap gap-1.5 mb-1.5">
+                        <span className="inline-block text-[0.6rem] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                          {CARE_HOME_TYPE_LABELS[h.facility_type] || h.facility_type}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {h.phone && (
+                          <a href={`tel:${h.phone.replace(/[^0-9+]/g, '')}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F2F4F8] border border-gray-200 text-[#1B3A6B] font-semibold text-sm active:bg-[#1B3A6B] active:text-white transition-all">
+                            📞 {h.phone}
+                          </a>
+                        )}
+                        {h.fax && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 text-xs font-body">
+                            📠 {h.fax}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button onClick={() => { setShareCHTarget(h); openModal('share_ch') }}
+                          className="px-2.5 py-1 rounded text-xs bg-[#1B3A6B]/10 text-[#1B3A6B] font-body active:bg-[#1B3A6B] active:text-white transition-all">
+                          📤 Share
+                        </button>
+                        <button onClick={() => printCHCard(h)}
+                          className="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 font-body active:bg-gray-300 transition-all">
+                          🖨️ Print
+                        </button>
+                        {isAdmin && (
+                          <button onClick={() => { setEditCH(h); openModal('edit_ch') }}
+                            className="px-2.5 py-1 rounded text-xs bg-gray-100 text-gray-600 font-body active:bg-gray-300 transition-all">
+                            ✏️ Edit
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )
+        })()}
+
         {/* ── NURSING HOMES VIEW ── */}
         {!loading && view === 'nursing_homes' && (() => {
           const nhList = filteredNH()
@@ -858,6 +1100,23 @@ export default function App() {
                 initial={editNH}
                 onSave={saveNursingHome}
                 onDelete={editNH.id ? () => deleteNursingHome(editNH.id!, editNH.name!) : undefined}
+                onCancel={closeModal}
+              />
+            </>}
+
+            {/* CH SHARE */}
+            {modal === 'share_ch' && shareCHTarget && <>
+              <ModalHeader title="📤 Share Care Facility" color="bg-[#1B3A6B]" onClose={closeModal} />
+              <CHShareForm home={shareCHTarget} onShare={shareCareHome} onCancel={closeModal} />
+            </>}
+
+            {/* CH EDIT / ADD */}
+            {modal === 'edit_ch' && editCH !== null && <>
+              <ModalHeader title={editCH.id ? '✏️ Edit Care Home' : '➕ Add Care Home'} color="bg-[#1B3A6B]" onClose={closeModal} />
+              <CHForm
+                initial={editCH}
+                onSave={saveCareHome}
+                onDelete={editCH.id ? () => deleteCareHome(editCH.id!, editCH.name!) : undefined}
                 onCancel={closeModal}
               />
             </>}
@@ -1113,6 +1372,72 @@ function NHShareForm({ home, onShare, onCancel }:
         <div className="text-xs text-gray-400">{[home.city, home.county ? home.county + ' County' : '', home.state].filter(Boolean).join(', ')}</div>
         {home.phone && <div className="text-xs text-gray-400">{home.phone}</div>}
         {home.va_contract && <div className="text-[0.6rem] font-bold text-green-700 mt-0.5">✓ {home.va_contract}</div>}
+      </div>
+      <div className="flex gap-2">
+        {(['email', 'sms'] as const).map(m => (
+          <button key={m} onClick={() => setMethod(m)}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-body border-2 transition-all ${method === m ? 'bg-[#1B3A6B] text-white border-[#1B3A6B]' : 'bg-white text-gray-500 border-gray-200'}`}>
+            {m === 'email' ? '📧 Email' : '💬 Text'}
+          </button>
+        ))}
+      </div>
+      <input type={method === 'email' ? 'email' : 'tel'} value={contact} onChange={e => setContact(e.target.value)}
+        placeholder={method === 'email' ? 'email@example.com' : '555-555-5555'}
+        className={fi} />
+      <div className="flex gap-2">
+        <button onClick={onCancel} className="flex-1 py-2.5 rounded-lg bg-gray-100 text-gray-600 text-sm font-body">Cancel</button>
+        <button onClick={() => contact && onShare(home, method, contact)} className="flex-1 py-2.5 rounded-lg bg-[#1B3A6B] text-white text-sm font-body font-semibold">Send</button>
+      </div>
+    </div>
+  )
+}
+
+function CHForm({ initial, onSave, onDelete, onCancel }:
+  { initial: Partial<CareHome>; onSave: (d: Partial<CareHome>) => void; onDelete?: () => void; onCancel: () => void }) {
+  const [d, setD] = useState<Partial<CareHome>>(initial)
+  const set = (k: keyof CareHome, v: string) => setD(prev => ({ ...prev, [k]: v }))
+  return (
+    <div className="p-4 flex flex-col gap-3">
+      <Field label="Facility Name *"><input value={d.name || ''} onChange={e => set('name', e.target.value)} placeholder="Facility name" className={fi} /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="State">
+          <select value={d.state || 'MO'} onChange={e => set('state', e.target.value)} className={fi}>
+            {NH_STATES.map(s => <option key={s.code} value={s.code}>{s.label}</option>)}
+          </select>
+        </Field>
+        <Field label="County"><input value={d.county || ''} onChange={e => set('county', e.target.value)} className={fi} /></Field>
+      </div>
+      <Field label="City"><input value={d.city || ''} onChange={e => set('city', e.target.value)} className={fi} /></Field>
+      <Field label="Address"><input value={d.address || ''} onChange={e => set('address', e.target.value)} className={fi} /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Phone"><input type="tel" value={d.phone || ''} onChange={e => set('phone', e.target.value)} placeholder="555-555-5555" className={fi} /></Field>
+        <Field label="Fax"><input type="tel" value={d.fax || ''} onChange={e => set('fax', e.target.value)} placeholder="555-555-5555" className={fi} /></Field>
+      </div>
+      <Field label="Facility Type">
+        <select value={d.facility_type || 'RCF'} onChange={e => set('facility_type', e.target.value)} className={fi}>
+          {CARE_HOME_TYPES.map(t => <option key={t} value={t}>{CARE_HOME_TYPE_LABELS[t]} ({t})</option>)}
+        </select>
+      </Field>
+      <div className="flex gap-2 pt-2 border-t border-gray-100">
+        {onDelete && <button onClick={onDelete} className="px-3 py-2.5 rounded-lg bg-red-600 text-white text-sm font-body">Delete</button>}
+        <button onClick={onCancel} className="flex-1 py-2.5 rounded-lg bg-gray-100 text-gray-600 text-sm font-body">Cancel</button>
+        <button onClick={() => onSave(d)} className="flex-1 py-2.5 rounded-lg bg-[#1B3A6B] text-white text-sm font-body font-semibold">Save</button>
+      </div>
+    </div>
+  )
+}
+
+function CHShareForm({ home, onShare, onCancel }:
+  { home: CareHome; onShare: (h: CareHome, method: 'email' | 'sms', contact: string) => void; onCancel: () => void }) {
+  const [method, setMethod]   = useState<'email' | 'sms'>('email')
+  const [contact, setContact] = useState('')
+  return (
+    <div className="p-4 flex flex-col gap-3">
+      <div className="bg-[#F2F4F8] rounded-lg p-3">
+        <div className="font-semibold text-sm text-[#1B3A6B] font-body">🏠 {home.name}</div>
+        <div className="text-xs text-gray-400">{[home.city, home.county ? home.county + ' County' : '', home.state].filter(Boolean).join(', ')}</div>
+        {home.phone && <div className="text-xs text-gray-400">{home.phone}</div>}
+        <div className="text-[0.6rem] font-bold text-blue-700 mt-0.5">{CARE_HOME_TYPE_LABELS[home.facility_type] || home.facility_type}</div>
       </div>
       <div className="flex gap-2">
         {(['email', 'sms'] as const).map(m => (
