@@ -216,10 +216,12 @@ export default function App() {
       updated_by: adminEmail,
     }
     if (data.id) {
-      await supabase.from('resources').update(payload).eq('id', data.id)
+      const { error } = await supabase.from('resources').update(payload).eq('id', data.id)
+      if (error) { alert('Error saving: ' + error.message); return }
       await logAudit('update', 'resources', data.id, data.name ?? '')
     } else {
-      const { data: inserted } = await supabase.from('resources').insert(payload).select().single()
+      const { data: inserted, error } = await supabase.from('resources').insert(payload).select().single()
+      if (error) { alert('Error saving: ' + error.message); return }
       if (inserted) await logAudit('insert', 'resources', inserted.id, data.name ?? '')
     }
     setModal('none'); loadAll()
