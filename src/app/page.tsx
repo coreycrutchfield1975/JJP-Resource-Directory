@@ -357,6 +357,45 @@ export default function App() {
     if (w) { w.document.write(html); w.document.close(); w.print() }
   }
 
+  // ─── Resources Print (all filtered) ─────────────────────────────────────────
+  function printResources() {
+    const list = filtered()
+    if (!list.length) { alert('No resources match your current filters.'); return }
+    const grouped: Record<string, Resource[]> = {}
+    list.forEach(r => { if (!grouped[r.type]) grouped[r.type] = []; grouped[r.type].push(r) })
+    const filterDesc = [
+      countyFilter ? `${countyFilter} County` : '',
+      stateFilter || '',
+      categoryFilter ? CATEGORIES.find(c => c.value === categoryFilter)?.label || '' : '',
+      search ? `"${search}"` : '',
+    ].filter(Boolean).join(' · ') || 'All Resources'
+    const html = `<html><head><title>Veterans Resource Directory</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+    <style>body{font-family:'Source Sans 3',sans-serif;font-size:9pt;color:#111;}
+    h1{font-family:'Oswald',sans-serif;font-size:16pt;margin:0;}
+    .hdr{background:#0F2347;color:#fff;padding:12px 16px;margin-bottom:4px;}
+    .gold{background:#C8941A;height:3px;margin-bottom:12px;}
+    .cat{background:#1B3A6B;color:#fff;padding:4px 10px;font-family:'Oswald',sans-serif;font-size:9pt;letter-spacing:.07em;margin:8px 0 0;border-radius:3px 3px 0 0;}
+    table{width:100%;border-collapse:collapse;font-size:8pt;}
+    th{background:#254e91;color:#fff;padding:4px 8px;text-align:left;}
+    td{padding:4px 8px;border-bottom:1px solid #eee;}
+    tr:nth-child(even) td{background:#F8F9FF;}
+    .pin{color:#C8941A;font-weight:700;}
+    footer{font-size:7pt;color:#888;margin-top:12px;border-top:1px solid #ddd;padding-top:6px;}
+    @media print{body{margin:0;}}</style></head><body>
+    <div class="hdr"><h1>🇺🇸 Veterans Resource Directory</h1>
+    <p style="font-size:8pt;opacity:.7;margin:3px 0 0">${filterDesc} · ${list.length} resources · John J. Pershing VA Medical Center · ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</p></div>
+    <div class="gold"></div>
+    ${Object.entries(grouped).sort().map(([type, items]) => `
+      <div class="cat">${TYPE_META[type]?.icon || ''} ${type.toUpperCase()} (${items.length})</div>
+      <table><thead><tr><th width="26%">Name</th><th width="12%">City</th><th width="10%">County</th><th width="14%">Phone</th><th width="22%">Address</th><th>Notes</th></tr></thead>
+      <tbody>${items.sort((a,b)=>a.name.localeCompare(b.name)).map(r=>`<tr><td>${r.pinned?'<span class="pin">⭐ </span>':''}${r.name}</td><td>${r.city||''}</td><td>${r.county||''}</td><td><strong>${r.phone||''}</strong></td><td>${r.address||''}</td><td style="font-size:7pt;font-style:italic;color:#92400E;">${r.notes||''}</td></tr>`).join('')}</tbody></table>`).join('')}
+    <footer>Always call ahead to verify hours and availability. John J. Pershing VA Medical Center, Poplar Bluff MO.</footer>
+    </body></html>`
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close(); w.print() }
+  }
+
   // ─── CH Share ────────────────────────────────────────────────────────────────
   async function shareCareHome(h: CareHome, method: 'email' | 'sms', contact: string) {
     const loc = [h.city, h.county ? h.county + ' County' : '', h.state].filter(Boolean).join(', ')
@@ -727,13 +766,19 @@ export default function App() {
               <span className="font-display text-[#1B3A6B] text-sm font-semibold">
                 {results.length} <span className="text-[#C8941A]">results</span>
               </span>
-              <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                className="text-xs px-2 py-1.5 rounded-md border border-gray-200 bg-white text-gray-600 font-body outline-none cursor-pointer">
-                <option value="pinned">⭐ Pinned first</option>
-                <option value="name">A – Z</option>
-                <option value="county">By county</option>
-                <option value="type">By type</option>
-              </select>
+              <div className="flex items-center gap-2">
+                <button onClick={printResources}
+                  className="px-3 py-1.5 rounded-md bg-[#1B3A6B] text-white text-xs font-semibold font-body flex items-center gap-1 active:opacity-80 transition-all">
+                  🖨️ Print List
+                </button>
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                  className="text-xs px-2 py-1.5 rounded-md border border-gray-200 bg-white text-gray-600 font-body outline-none cursor-pointer">
+                  <option value="pinned">⭐ Pinned first</option>
+                  <option value="name">A – Z</option>
+                  <option value="county">By county</option>
+                  <option value="type">By type</option>
+                </select>
+              </div>
             </div>
 
             {pageItems.length === 0 ? (
