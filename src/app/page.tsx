@@ -209,22 +209,26 @@ export default function App() {
   // ─── CRUD ────────────────────────────────────────────────────────────────────
   async function saveResource(data: Partial<Resource>) {
     if (!data.name) { alert('Name is required'); return }
-    const payload = {
-      name: data.name, type: data.type || 'Community', state: data.state || 'MO',
-      county: data.county || '', city: data.city || '', phone: data.phone || '',
-      address: data.address || '', notes: data.notes || '', pinned: data.pinned || false,
-      updated_by: adminEmail,
+    try {
+      const payload = {
+        name: data.name, type: data.type || 'Community', state: data.state || 'MO',
+        county: data.county || '', city: data.city || '', phone: data.phone || '',
+        address: data.address || '', notes: data.notes || '', pinned: data.pinned || false,
+        updated_by: adminEmail,
+      }
+      if (data.id) {
+        const { error } = await supabase.from('resources').update(payload).eq('id', data.id)
+        if (error) { alert('Error saving: ' + error.message); return }
+        await logAudit('update', 'resources', data.id, data.name ?? '')
+      } else {
+        const { data: inserted, error } = await supabase.from('resources').insert(payload).select().single()
+        if (error) { alert('Error saving: ' + error.message); return }
+        if (inserted) await logAudit('insert', 'resources', inserted.id, data.name ?? '')
+      }
+      setModal('none'); loadAll()
+    } catch (e: unknown) {
+      alert('Unexpected error: ' + (e instanceof Error ? e.message : String(e)))
     }
-    if (data.id) {
-      const { error } = await supabase.from('resources').update(payload).eq('id', data.id)
-      if (error) { alert('Error saving: ' + error.message); return }
-      await logAudit('update', 'resources', data.id, data.name ?? '')
-    } else {
-      const { data: inserted, error } = await supabase.from('resources').insert(payload).select().single()
-      if (error) { alert('Error saving: ' + error.message); return }
-      if (inserted) await logAudit('insert', 'resources', inserted.id, data.name ?? '')
-    }
-    setModal('none'); loadAll()
   }
 
   async function deleteResource(id: string, name: string) {
