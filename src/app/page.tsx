@@ -208,7 +208,7 @@ export default function App() {
 
   // ─── CRUD ────────────────────────────────────────────────────────────────────
   async function saveResource(data: Partial<Resource>) {
-    if (!data.name) return
+    if (!data.name) { alert('Name is required'); return }
     const payload = {
       name: data.name, type: data.type || 'Community', state: data.state || 'MO',
       county: data.county || '', city: data.city || '', phone: data.phone || '',
