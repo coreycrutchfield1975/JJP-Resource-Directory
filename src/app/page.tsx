@@ -762,23 +762,23 @@ export default function App() {
         {/* ── RESOURCES VIEW ── */}
         {!loading && view === 'resources' && (
           <>
-            <div className="flex items-center justify-between px-3.5 py-2.5">
+            <div className="flex items-center justify-between px-3.5 pt-2.5 pb-1">
               <span className="font-display text-[#1B3A6B] text-sm font-semibold">
                 {results.length} <span className="text-[#C8941A]">results</span>
               </span>
-              <div className="flex items-center gap-2">
-                <button onClick={printResources}
-                  className="px-3 py-1.5 rounded-md bg-[#1B3A6B] text-white text-xs font-semibold font-body flex items-center gap-1 active:opacity-80 transition-all">
-                  🖨️ Print List
-                </button>
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                  className="text-xs px-2 py-1.5 rounded-md border border-gray-200 bg-white text-gray-600 font-body outline-none cursor-pointer">
-                  <option value="pinned">⭐ Pinned first</option>
-                  <option value="name">A – Z</option>
-                  <option value="county">By county</option>
-                  <option value="type">By type</option>
-                </select>
-              </div>
+              <button onClick={printResources}
+                className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 font-body active:bg-gray-100 transition-all">
+                🖨️ Print List
+              </button>
+            </div>
+            <div className="flex items-center justify-end px-3.5 pb-2">
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                className="text-xs px-2 py-1.5 rounded-md border border-gray-200 bg-white text-gray-600 font-body outline-none cursor-pointer">
+                <option value="pinned">⭐ Pinned first</option>
+                <option value="name">A – Z</option>
+                <option value="county">By county</option>
+                <option value="type">By type</option>
+              </select>
             </div>
 
             {pageItems.length === 0 ? (
