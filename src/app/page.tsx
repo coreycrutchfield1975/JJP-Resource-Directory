@@ -226,10 +226,7 @@ export default function App() {
         if (error) { alert('Error saving: ' + error.message); return }
         if (inserted) await logAudit('insert', 'resources', inserted.id, data.name ?? '')
       }
-      setModal('none')
-      const { data: check } = await supabase.from('resources').select('id').order('created_at', { ascending: false }).limit(5)
-      alert('Saved! Latest 5 IDs in DB: ' + (check?.map(r => r.id.slice(0,8)).join(', ') || 'none'))
-      loadAll()
+      setModal('none'); loadAll()
     } catch (e: unknown) {
       alert('Unexpected error: ' + (e instanceof Error ? e.message : String(e)))
     }
