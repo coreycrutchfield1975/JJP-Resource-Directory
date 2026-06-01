@@ -4,7 +4,7 @@ import { supabase, Resource, Hotline, NursingHome, CareHome, TYPE_META, RESOURCE
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type View = 'resources' | 'hotlines' | 'nursing_homes' | 'care_homes'
-type Modal = 'none' | 'crisis' | 'resource' | 'hotline' | 'share' | 'suggest' | 'login' | 'settings' | 'share_nh' | 'edit_nh' | 'share_ch' | 'edit_ch'
+type Modal = 'none' | 'crisis' | 'resource' | 'hotline' | 'share' | 'suggest' | 'login' | 'settings' | 'share_nh' | 'edit_nh' | 'share_ch' | 'edit_ch' | 'import_csv'
 
 const PAGE_SIZE = 30
 
@@ -73,6 +73,11 @@ export default function App() {
   const [chTypeFilter, setChTypeFilter]             = useState('')
   const [shareCHTarget, setShareCHTarget]           = useState<CareHome | null>(null)
   const [editCH, setEditCH]                         = useState<Partial<CareHome> | null>(null)
+
+  // CSV import
+  const [csvRows, setCsvRows] = useState<Partial<Resource>[]>([])
+  const [csvImporting, setCsvImporting] = useState(false)
+  const csvInputRef = useRef<HTMLInputElement>(null)
 
   // Refs
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -317,6 +322,96 @@ export default function App() {
 
   async function logAudit(action: string, table: string, id: string, name: string) {
     await supabase.from('audit_log').insert({ action, table_name: table, record_id: id, record_name: name, changed_by: adminEmail })
+  }
+
+  // ─── CSV Import ──────────────────────────────────────────────────────────────
+  function parseCsvLine(line: string): string[] {
+    const result: string[] = []
+    let current = ''; let inQuotes = false
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i]
+      if (c === '"') {
+        if (inQuotes && line[i + 1] === '"') { current += '"'; i++ }
+        else inQuotes = !inQuotes
+      } else if (c === ',' && !inQuotes) { result.push(current); current = '' }
+      else current += c
+    }
+    result.push(current)
+    return result
+  }
+
+  function parseCSV(text: string): Partial<Resource>[] {
+    const lines = text.trim().split(/\r?\n/)
+    if (lines.length < 2) return []
+    const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase().replace(/[^a-z_]/g, ''))
+    const rows: Partial<Resource>[] = []
+    for (let i = 1; i < lines.length; i++) {
+      const vals = parseCsvLine(lines[i])
+      if (!vals.some(v => v.trim())) continue
+      const row: Partial<Resource> = {}
+      headers.forEach((h, idx) => {
+        const v = (vals[idx] ?? '').trim()
+        if (h === 'name') row.name = v
+        else if (h === 'type') row.type = RESOURCE_TYPES.includes(v) ? v : 'Community'
+        else if (h === 'state') row.state = ['MO', 'AR'].includes(v.toUpperCase()) ? v.toUpperCase() : 'MO'
+        else if (h === 'county') row.county = v
+        else if (h === 'city') row.city = v
+        else if (h === 'phone') row.phone = v
+        else if (h === 'address') row.address = v
+        else if (h === 'notes') row.notes = v
+        else if (h === 'pinned') row.pinned = ['yes', 'true', '1'].includes(v.toLowerCase())
+      })
+      if (row.name) rows.push(row)
+    }
+    return rows
+  }
+
+  function downloadCSVTemplate() {
+    const lines = [
+      'name,type,state,county,city,phone,address,notes',
+      '"Example Food Bank","Food","MO","Butler","Poplar Bluff","573-555-0100","123 Main St","Open Mon-Fri 9am-3pm"',
+      '"Example Housing Help","Housing","AR","Randolph","Pocahontas","870-555-0200","456 Oak Ave",""',
+    ]
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'jjp_resource_import_template.csv'; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function handleCSVFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const text = ev.target?.result as string
+      const parsed = parseCSV(text)
+      setCsvRows(parsed)
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  async function importCSVRows() {
+    if (!csvRows.length) return
+    setCsvImporting(true)
+    let successCount = 0; let errorCount = 0
+    const chunks: Partial<Resource>[][] = []
+    for (let i = 0; i < csvRows.length; i += 50) chunks.push(csvRows.slice(i, i + 50))
+    for (const chunk of chunks) {
+      const payload = chunk.map(r => ({
+        name: r.name!, type: r.type || 'Community', state: r.state || 'MO',
+        county: r.county || '', city: r.city || '', phone: r.phone || '',
+        address: r.address || '', notes: r.notes || '', pinned: r.pinned || false,
+        updated_by: adminEmail,
+      }))
+      const { error } = await supabase.from('resources').insert(payload)
+      if (error) { console.error(error); errorCount += chunk.length }
+      else successCount += chunk.length
+    }
+    setCsvImporting(false); setCsvRows([])
+    setModal('none'); await loadAll()
+    alert(`Import complete: ${successCount} added${errorCount ? `, ${errorCount} failed` : ''}.`)
   }
 
   // ─── Share ───────────────────────────────────────────────────────────────────
@@ -750,7 +845,11 @@ export default function App() {
                 ? <button onClick={() => { setEditCH({}); openModal('edit_ch') }} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">➕ Care Home</button>
                 : <button onClick={() => { setEditResource({}); openModal('resource') }} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">➕ {view === 'hotlines' ? 'Hotline' : 'Resource'}</button>
               }
+              {view === 'resources' && (
+                <button onClick={() => { setCsvRows([]); openModal('import_csv') }} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">📥 Import CSV</button>
+              )}
               <button onClick={() => openModal('settings')} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">⚙️ Settings</button>
+              <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={handleCSVFile} />
             </div>
           </div>
         )}
@@ -1171,6 +1270,57 @@ export default function App() {
                 onDelete={editCH.id ? () => deleteCareHome(editCH.id!, editCH.name!) : undefined}
                 onCancel={closeModal}
               />
+            </>}
+
+            {/* CSV IMPORT */}
+            {modal === 'import_csv' && isAdmin && <>
+              <ModalHeader title="📥 Import Resources from CSV" color="bg-[#1B3A6B]" onClose={closeModal} />
+              <div className="p-4 font-body">
+                <p className="text-sm text-gray-600 mb-3">
+                  Upload a CSV file to bulk-add resources. Columns: <span className="font-mono text-xs bg-gray-100 px-1 rounded">name, type, state, county, city, phone, address, notes</span>
+                </p>
+                <p className="text-xs text-gray-500 mb-1">Valid types: {RESOURCE_TYPES.join(', ')}</p>
+                <p className="text-xs text-gray-500 mb-4">Valid states: MO, AR &nbsp;·&nbsp; Rows missing a name will be skipped.</p>
+                <div className="flex gap-2 mb-4">
+                  <button onClick={downloadCSVTemplate} className="text-xs px-3 py-1.5 rounded border border-[#1B3A6B] text-[#1B3A6B] bg-white active:bg-blue-50">
+                    ⬇ Download Template
+                  </button>
+                  <button onClick={() => csvInputRef.current?.click()} className="text-xs px-3 py-1.5 rounded bg-[#1B3A6B] text-white active:bg-[#0f2347]">
+                    📂 Choose CSV File
+                  </button>
+                </div>
+
+                {csvRows.length > 0 && (
+                  <>
+                    <p className="text-sm font-semibold text-[#1B3A6B] mb-2">{csvRows.length} rows ready to import:</p>
+                    <div className="overflow-x-auto border rounded mb-4 max-h-64 overflow-y-auto">
+                      <table className="text-xs w-full border-collapse">
+                        <thead className="bg-[#1B3A6B] text-white sticky top-0">
+                          <tr>{['Name','Type','State','County','City','Phone'].map(h => <th key={h} className="px-2 py-1.5 text-left font-semibold whitespace-nowrap">{h}</th>)}</tr>
+                        </thead>
+                        <tbody>
+                          {csvRows.map((r, i) => (
+                            <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              <td className="px-2 py-1 max-w-[140px] truncate">{r.name}</td>
+                              <td className="px-2 py-1">{r.type}</td>
+                              <td className="px-2 py-1">{r.state}</td>
+                              <td className="px-2 py-1">{r.county}</td>
+                              <td className="px-2 py-1">{r.city}</td>
+                              <td className="px-2 py-1">{r.phone}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={closeModal} className="text-xs px-3 py-1.5 rounded border border-gray-300 text-gray-600">Cancel</button>
+                      <button onClick={importCSVRows} disabled={csvImporting} className="text-xs px-4 py-1.5 rounded bg-green-700 text-white font-semibold disabled:opacity-50">
+                        {csvImporting ? 'Importing…' : `✅ Import ${csvRows.length} Resources`}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </>}
 
           </div>
