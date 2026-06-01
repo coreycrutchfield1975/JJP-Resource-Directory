@@ -341,7 +341,9 @@ export default function App() {
   }
 
   function parseCSV(text: string): Partial<Resource>[] {
-    const lines = text.trim().split(/\r?\n/)
+    const allLines = text.trim().split(/\r?\n/)
+    // Skip comment/instruction lines (start with #) and find the header row
+    const lines = allLines.filter(l => !l.trim().startsWith('#'))
     if (lines.length < 2) return []
     const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase().replace(/[^a-z_]/g, ''))
     const rows: Partial<Resource>[] = []
@@ -368,6 +370,29 @@ export default function App() {
 
   function downloadCSVTemplate() {
     const lines = [
+      '# JJP Veteran Resource Directory — CSV Import Template',
+      '# Lines starting with # are ignored during import.',
+      '#',
+      '# HOW TO USE:',
+      '#   1. Delete the two example rows below and fill in your resources.',
+      '#   2. Save this file as CSV (comma-separated).',
+      '#   3. In the directory, log in as admin, click "Import CSV", choose this file,',
+      '#      preview the rows, then click Import.',
+      '#',
+      '# COLUMNS:',
+      '#   name    - (REQUIRED) Full name of the organization or program',
+      '#   type    - Category. Must be one of: Emergency, Food, Housing, Veteran,',
+      '#             Community, Assistance, Transportation, Legal, Health, Charity',
+      '#             (defaults to Community if left blank or unrecognized)',
+      '#   state   - MO or AR  (defaults to MO)',
+      '#   county  - County name only, no "County" suffix  (e.g. Butler, not Butler County)',
+      '#   city    - City name',
+      '#   phone   - Phone number in any format',
+      '#   address - Street address',
+      '#   notes   - Hours, eligibility, website, or any other useful details',
+      '#',
+      '# TIP: When searching findhelp.org by ZIP code, copy each result into a new row here.',
+      '#',
       'name,type,state,county,city,phone,address,notes',
       '"Example Food Bank","Food","MO","Butler","Poplar Bluff","573-555-0100","123 Main St","Open Mon-Fri 9am-3pm"',
       '"Example Housing Help","Housing","AR","Randolph","Pocahontas","870-555-0200","456 Oak Ave",""',
