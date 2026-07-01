@@ -920,6 +920,7 @@ export default function App() {
 
       {/* ── SCROLL AREA ── */}
       <div ref={scrollRef} className="flex-1 scroll-area overflow-y-auto pb-24">
+        <div className="max-w-3xl mx-auto">
 
         {loading && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -1236,6 +1237,7 @@ export default function App() {
             </>
           )
         })()}
+        </div>
       </div>
 
       {/* ── CRISIS FLOAT BUTTON ── */}
