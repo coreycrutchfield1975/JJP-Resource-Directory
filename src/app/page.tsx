@@ -751,19 +751,20 @@ export default function App() {
               <div className="text-[#C8941A] font-body leading-tight font-semibold" style={{fontSize:'.6rem'}}>John J. Pershing VA MC</div>
             </div>
           </div>
-          {/* Center: Helpline */}
-          <div className="flex-1 text-center">
-            <a href="tel:18008271000" className="inline-block text-white font-bold font-body hover:text-[#C8941A] transition-colors" style={{fontSize:'1.1rem',letterSpacing:'0.5px'}}>
-              ☎ VA Benefits Helpline — 800-827-1000
+          {/* Center: Helpline - moved to right side */}
+          <div className="flex-1"></div>
+          {/* Right: Helpline + Admin */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <a href="tel:18008271000" className="inline-block text-white font-bold font-body hover:text-[#C8941A] transition-colors whitespace-nowrap" style={{fontSize:'1.1rem',letterSpacing:'0.5px'}}>
+              ☎ 800-827-1000
             </a>
-          </div>
-          {/* Right: Admin */}
-          <button onClick={() => isAdmin ? doLogout() : openModal('login')}
+            <button onClick={() => isAdmin ? doLogout() : openModal('login')}
             className={`text-xs px-2.5 py-1.5 rounded-md border font-body transition-all flex-shrink-0 ${isAdmin
               ? 'bg-amber-800 border-amber-700 text-white'
               : 'bg-white/10 border-white/20 text-white/80 hover:bg-white/20'}`}>
             {isAdmin ? '🛡️' : '🔒'}
           </button>
+          </div>
         </div>
 
         {/* Title bar */}
@@ -786,7 +787,7 @@ export default function App() {
 
         {/* Category chips — Resources only */}
         {view === 'resources' && (
-          <div className="flex gap-1.5 px-3 pb-2 overflow-x-auto no-scrollbar">
+          <div className="flex gap-1.5 px-3 pb-2 overflow-x-auto no-scrollbar justify-center">
             {CATEGORIES.map(cat => (
               <button key={cat.value} onClick={() => { setCategoryFilter(cat.value); setPage(1); scrollRef.current?.scrollTo(0, 0) }}
                 className={`chip flex-shrink-0 px-3 py-1.5 rounded-full border text-xs whitespace-nowrap transition-all font-body font-semibold ${
