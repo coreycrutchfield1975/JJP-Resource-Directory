@@ -1020,6 +1020,7 @@ export default function App() {
                 <button onClick={() => { setPage(p => Math.min(totalPages, p + 1)); scrollRef.current?.scrollTo(0, 0) }}
                   disabled={page === totalPages} className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 text-sm disabled:opacity-30">Next →</button>
               </div>
+            )}
           </>
         )}
 
@@ -1789,15 +1790,15 @@ function ResourceMap({ resources }: { resources: Resource[] }) {
   }, [geocoded])
 
   return (
-    <div className="px-3.5 py-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-display text-[#1B3A6B] text-sm font-semibold">🗺️ Resource Map</h3>
-        <span className="text-xs text-gray-400">{geocoded.length} of {resources.length} resources located</span>
+    <div className="px-3.5 py-4 h-full flex flex-col">
+      <div className="flex items-center justify-between mb-3 flex-shrink-0">
+        <h3 className="font-display text-[#1B3A6B] text-lg font-semibold">🗺️ Resource Map</h3>
+        <span className="text-sm text-gray-400">{geocoded.length} of {resources.length} resources located</span>
       </div>
-      {geoLoading && <div className="text-center py-8 text-gray-400 text-sm">Locating addresses on map…</div>}
-      {geoError && <div className="text-center py-8 text-gray-400 text-sm">{geoError}</div>}
-      <div ref={mapRef} className="w-full rounded-xl overflow-hidden border border-gray-200" style={{ height: '70vh' }} />
-      <p className="text-xs text-gray-400 mt-2">📍 Showing up to {geocoded.length || 100} mapped resources. Tap a marker for details.</p>
+      {geoLoading && <div className="flex-1 flex items-center justify-center text-gray-400 text-base">Locating addresses on map…</div>}
+      {geoError && <div className="flex-1 flex items-center justify-center text-gray-400 text-base">{geoError}</div>}
+      <div ref={mapRef} className="w-full flex-1 rounded-xl overflow-hidden border border-gray-200" />
+      <p className="text-sm text-gray-400 mt-2 flex-shrink-0">📍 Tap a marker for details. Showing up to {geocoded.length || 100} mapped resources.</p>
     </div>
   )
 }
