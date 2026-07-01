@@ -769,7 +769,7 @@ export default function App() {
 
         {/* Title bar */}
         <div className="px-3.5 py-1.5" style={{background:'linear-gradient(135deg,#0F2347 0%,#1B3A6B 100%)'}}>
-          <h1 className="font-display font-bold text-white uppercase tracking-widest" style={{fontSize:'.78rem',letterSpacing:'.12em'}}>Veterans Resource Directory</h1>
+          <h1 className="font-display font-bold text-[#F0C84A] uppercase tracking-widest text-center" style={{fontSize:'.9rem',letterSpacing:'.15em',textShadow:'0 1px 4px rgba(0,0,0,0.4)'}}>⭐ Veterans Resource Directory ⭐</h1>
         </div>
 
         {/* Search */}
