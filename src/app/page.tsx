@@ -945,6 +945,13 @@ export default function App() {
               </select>
             </div>
 
+            {/* Suggest button — between filters and results */}
+            <div className="px-3.5 py-2 text-center border-b border-gray-100">
+              <button onClick={() => openModal('suggest')} className="text-sm text-[#1B3A6B] underline underline-offset-2 font-body">
+                Know a resource we're missing? Suggest it →
+              </button>
+            </div>
+
             {pageItems.length === 0 ? (
               <div className="text-center py-16 px-5">
                 <div className="text-5xl mb-3">🔍</div>
@@ -1013,14 +1020,6 @@ export default function App() {
                 <button onClick={() => { setPage(p => Math.min(totalPages, p + 1)); scrollRef.current?.scrollTo(0, 0) }}
                   disabled={page === totalPages} className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 text-sm disabled:opacity-30">Next →</button>
               </div>
-            )}
-
-            {/* Suggest button */}
-            <div className="px-3.5 py-3 text-center">
-              <button onClick={() => openModal('suggest')} className="text-sm text-[#1B3A6B] underline underline-offset-2 font-body">
-                Know a resource we're missing? Suggest it →
-              </button>
-            </div>
           </>
         )}
 
@@ -1285,7 +1284,7 @@ export default function App() {
             {modal === 'suggest' && <>
               <ModalHeader title="💡 Suggest a Resource" color="bg-[#1B3A6B]" onClose={closeModal} />
               <SuggestForm counties={counties} onSubmit={async (data) => {
-                await supabase.from('suggestions').insert(data)
+                await fetch('/api/suggestions', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) })
                 closeModal(); alert('Thank you! Your suggestion has been submitted for review.')
               }} onCancel={closeModal} />
             </>}
