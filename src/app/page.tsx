@@ -739,7 +739,7 @@ export default function App() {
             <span className="font-display font-black text-white tracking-tight" style={{fontSize:'1.6rem',lineHeight:1}}>VA</span>
             <div className="flex-shrink-0">
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Seal_of_the_U.S._Department_of_Veterans_Affairs.svg/120px-Seal_of_the_U.S._Department_of_Veterans_Affairs.svg.png"
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Seal_of_the_U.S._Department_of_Veterans_Affairs.svg/120px-Seal_of_the_U.S._Department_of_Veterans_Affairs.svg.png"
                 alt="VA Seal"
                 className="w-9 h-9 object-contain"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
