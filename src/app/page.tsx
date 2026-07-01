@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase, Resource, Hotline, NursingHome, CareHome, TYPE_META, RESOURCE_TYPES, HOTLINE_CATEGORIES, STATES, NH_STATES, CARE_HOME_TYPES, CARE_HOME_TYPE_LABELS } from '@/lib/supabase'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type View = 'resources' | 'hotlines' | 'nursing_homes' | 'care_homes' | 'map'
+type View = 'resources' | 'hotlines' | 'nursing_homes' | 'care_homes'
 type Modal = 'none' | 'crisis' | 'resource' | 'hotline' | 'share' | 'suggest' | 'login' | 'settings' | 'share_nh' | 'edit_nh' | 'share_ch' | 'edit_ch' | 'import_csv'
 
 const PAGE_SIZE = 30
@@ -78,9 +78,6 @@ export default function App() {
   const [csvRows, setCsvRows] = useState<Partial<Resource>[]>([])
   const [csvImporting, setCsvImporting] = useState(false)
   const csvInputRef = useRef<HTMLInputElement>(null)
-
-  // Map focus
-  const [focusResource, setFocusResource] = useState<Resource | null>(null)
 
   // Refs
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -884,7 +881,7 @@ export default function App() {
 
         {/* Tabs */}
         <div className="flex bg-[#0F2347]">
-          {([['resources', '📋 Resources'], ['hotlines', '📞 Hotlines'], ['nursing_homes', '🏥 Nursing Homes'], ['care_homes', '🏠 Care Homes'], ['map', '🗺️ Map']] as [View, string][]).map(([v, label]) => (
+          {([['resources', '📋 Resources'], ['hotlines', '📞 Hotlines'], ['nursing_homes', '🏥 Nursing Homes'], ['care_homes', '🏠 Care Homes']] as [View, string][]).map(([v, label]) => (
             <button key={v} onClick={() => { setView(v); scrollRef.current?.scrollTo(0, 0) }}
               className={`flex-1 py-2.5 font-display text-[0.6rem] tracking-widest uppercase border-b-[3px] transition-all ${
                 view === v ? 'text-[#F0C84A] border-[#C8941A]' : 'text-white/40 border-transparent'}`}>
@@ -1004,7 +1001,7 @@ export default function App() {
                         className="px-2.5 py-1 rounded text-xs bg-[#1B3A6B]/10 text-[#1B3A6B] font-body active:bg-[#1B3A6B] active:text-white transition-all">
                         📤 Share
                       </button>
-                      <button onClick={() => { setView('map'); setTimeout(() => setFocusResource(r), 100) }}
+                      <button onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent([r.address, r.city, r.county, r.state].filter(Boolean).join(', '))}`, '_blank')}
                         className="px-2.5 py-1 rounded text-xs bg-green-50 text-green-700 font-body active:bg-green-600 active:text-white transition-all">
                         🗺️ Map
                       </button>
@@ -1235,9 +1232,6 @@ export default function App() {
           )
         })()}
       </div>
-
-      {/* ── MAP VIEW ── */}
-      {!loading && view === 'map' && <ResourceMap resources={results} focusResource={focusResource} onClearFocus={() => setFocusResource(null)} />}
 
       {/* ── CRISIS FLOAT BUTTON ── */}
       <button id="crisis-btn" onClick={() => openModal('crisis')}
@@ -1798,91 +1792,3 @@ const MILITARY_FACTS = [
   "The Purple Heart is the oldest US military decoration still in use — established 1782.",
   "More than 3.5 million veterans have received VA disability compensation for service-connected conditions."
 ]
-
-// ─── Map View ──────────────────────────────────────────────────────────────────
-function ResourceMap({ resources, focusResource, onClearFocus }: { resources: Resource[]; focusResource: Resource | null; onClearFocus: () => void }) {
-  const mapRef = useRef<HTMLDivElement>(null)
-  const [geocoded, setGeocoded] = useState<{ lat: number; lng: number; name: string; address: string }[]>([])
-  const [geoLoading, setGeoLoading] = useState(false)
-  const [geoError, setGeoError] = useState('')
-  const mapRefInstance = useRef<any>(null)
-
-  useEffect(() => {
-    if (!resources.length) return
-
-    // If a focus resource is set, only geocode that one
-    const toGeo = focusResource
-      ? [focusResource].filter(r => r.address)
-      : resources.filter(r => r.address).slice(0, 100)
-
-    if (!toGeo.length) { setGeoError('No address to locate.'); return }
-    setGeoLoading(true); setGeocoded([]); setGeoError('')
-
-    ;(async () => {
-      const results: ({ lat: number; lng: number; name: string; address: string } | null)[] = []
-      for (let i = 0; i < toGeo.length; i++) {
-        const r = toGeo[i]
-        const q = encodeURIComponent([r.address, r.city, r.county, r.state].filter(Boolean).join(', '))
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
-            headers: { 'User-Agent': 'VeteransResourceDirectory/1.0' }
-          })
-          const data = await res.json()
-          results.push(data && data[0] ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: r.name, address: q } : null)
-        } catch { results.push(null) }
-        if (i < toGeo.length - 1) await new Promise(r => setTimeout(r, 1100))
-      }
-      const valid = results.filter(Boolean) as { lat: number; lng: number; name: string; address: string }[]
-      setGeocoded(valid)
-      setGeoLoading(false)
-      if (!valid.length) setGeoError('Could not locate that address on the map.')
-    })()
-  }, [resources, focusResource])
-
-  useEffect(() => {
-    if (!mapRef.current || !geocoded.length) return
-    let L: any
-    import('leaflet').then(mod => {
-      L = mod.default
-      delete (L.Icon.Default.prototype as any)._getIconUrl
-      L.Icon.Default.mergeOptions({ iconRetinaUrl: 'https://unpkg.com/leaflet@1.9/dist/images/marker-icon-2x.png', iconUrl: 'https://unpkg.com/leaflet@1.9/dist/images/marker-icon.png', shadowUrl: 'https://unpkg.com/leaflet@1.9/dist/images/marker-shadow.png' })
-
-      if (mapRefInstance.current) mapRefInstance.current.remove()
-      const map = L.map(mapRef.current!).setView([37.0, -91.5], 7)
-      mapRefInstance.current = map
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map)
-
-      const bounds: [number, number][] = []
-      geocoded.forEach(g => {
-        bounds.push([g.lat, g.lng])
-        L.marker([g.lat, g.lng]).addTo(map).bindPopup(`<b>${g.name}</b><br/>${decodeURIComponent(g.address)}`)
-      })
-      if (bounds.length > 1) map.fitBounds(bounds, { padding: [30, 30] })
-      else if (bounds.length === 1) { map.setView(bounds[0], 15) }
-    })
-    return () => { if (mapRefInstance.current) { mapRefInstance.current.remove(); mapRefInstance.current = null } }
-  }, [geocoded])
-
-  return (
-    <div className="px-3.5 py-4 h-full flex flex-col">
-      <div className="flex items-center justify-between mb-3 flex-shrink-0">
-        <h3 className="font-display text-[#1B3A6B] text-lg font-semibold">🗺️ Resource Map</h3>
-        <div className="flex items-center gap-3">
-          {focusResource && (
-            <button onClick={onClearFocus} className="text-sm text-[#1B3A6B] underline underline-offset-2">« Back to all</button>
-          )}
-          <span className="text-sm text-gray-400">{geocoded.length} of {resources.length} resources located</span>
-        </div>
-      </div>
-      {focusResource && !geoLoading && !geoError && geocoded.length > 0 && (
-        <div className="mb-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg flex-shrink-0">
-          <span className="text-sm font-semibold text-blue-800">📍 {focusResource.name}</span>
-        </div>
-      )}
-      {geoLoading && <div className="flex-1 flex items-center justify-center text-gray-400 text-base">Locating addresses on map…</div>}
-      {geoError && <div className="flex-1 flex items-center justify-center text-gray-400 text-base">{geoError}</div>}
-      <div ref={mapRef} className="w-full flex-1 rounded-xl overflow-hidden border border-gray-200" />
-      <p className="text-sm text-gray-400 mt-2 flex-shrink-0">📍 Tap a marker for details. Showing up to {geocoded.length || 100} mapped resources.</p>
-    </div>
-  )
-}
