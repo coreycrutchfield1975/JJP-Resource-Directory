@@ -79,6 +79,9 @@ export default function App() {
   const [csvImporting, setCsvImporting] = useState(false)
   const csvInputRef = useRef<HTMLInputElement>(null)
 
+  // Map focus
+  const [focusResource, setFocusResource] = useState<Resource | null>(null)
+
   // Refs
   const scrollRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -989,6 +992,10 @@ export default function App() {
                         className="px-2.5 py-1 rounded text-xs bg-[#1B3A6B]/10 text-[#1B3A6B] font-body active:bg-[#1B3A6B] active:text-white transition-all">
                         📤 Share
                       </button>
+                      <button onClick={() => { setView('map'); setTimeout(() => setFocusResource(r), 100) }}
+                        className="px-2.5 py-1 rounded text-xs bg-green-50 text-green-700 font-body active:bg-green-600 active:text-white transition-all">
+                        🗺️ Map
+                      </button>
                       {isAdmin && <>
                         <button onClick={() => togglePin(r)} className="px-2.5 py-1 rounded text-xs bg-amber-50 text-amber-700 font-body active:bg-amber-500 active:text-white transition-all">
                           {r.pinned ? '★ Unpin' : '⭐ Pin'}
@@ -1218,7 +1225,7 @@ export default function App() {
       </div>
 
       {/* ── MAP VIEW ── */}
-      {!loading && view === 'map' && <ResourceMap resources={results} />}
+      {!loading && view === 'map' && <ResourceMap resources={results} focusResource={focusResource} onClearFocus={() => setFocusResource(null)} />}
 
       {/* ── CRISIS FLOAT BUTTON ── */}
       <button id="crisis-btn" onClick={() => openModal('crisis')}
@@ -1733,17 +1740,23 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const fi = "w-full px-3 py-2.5 rounded-lg border-2 border-gray-200 font-body text-sm text-gray-900 outline-none focus:border-[#1B3A6B] transition-all bg-white"
 
 // ─── Map View ──────────────────────────────────────────────────────────────────
-function ResourceMap({ resources }: { resources: Resource[] }) {
+function ResourceMap({ resources, focusResource, onClearFocus }: { resources: Resource[]; focusResource: Resource | null; onClearFocus: () => void }) {
   const mapRef = useRef<HTMLDivElement>(null)
   const [geocoded, setGeocoded] = useState<{ lat: number; lng: number; name: string; address: string }[]>([])
   const [geoLoading, setGeoLoading] = useState(false)
   const [geoError, setGeoError] = useState('')
+  const mapRefInstance = useRef<any>(null)
 
   useEffect(() => {
-    if (!resources.length || geocoded.length) return
-    const toGeo = resources.filter(r => r.address).slice(0, 100)
-    if (!toGeo.length) { setGeoError('No resources with addresses to map.'); return }
-    setGeoLoading(true)
+    if (!resources.length) return
+
+    // If a focus resource is set, only geocode that one
+    const toGeo = focusResource
+      ? [focusResource].filter(r => r.address)
+      : resources.filter(r => r.address).slice(0, 100)
+
+    if (!toGeo.length) { setGeoError('No address to locate.'); return }
+    setGeoLoading(true); setGeocoded([]); setGeoError('')
 
     ;(async () => {
       const results: ({ lat: number; lng: number; name: string; address: string } | null)[] = []
@@ -1757,26 +1770,26 @@ function ResourceMap({ resources }: { resources: Resource[] }) {
           const data = await res.json()
           results.push(data && data[0] ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: r.name, address: q } : null)
         } catch { results.push(null) }
-        // Nominatim rate limit: 1 req/sec
         if (i < toGeo.length - 1) await new Promise(r => setTimeout(r, 1100))
       }
       const valid = results.filter(Boolean) as { lat: number; lng: number; name: string; address: string }[]
       setGeocoded(valid)
       setGeoLoading(false)
-      if (!valid.length) setGeoError('Could not locate any addresses on the map.')
+      if (!valid.length) setGeoError('Could not locate that address on the map.')
     })()
-  }, [resources])
+  }, [resources, focusResource])
 
   useEffect(() => {
     if (!mapRef.current || !geocoded.length) return
     let L: any
     import('leaflet').then(mod => {
       L = mod.default
-      // Fix default icon paths
       delete (L.Icon.Default.prototype as any)._getIconUrl
       L.Icon.Default.mergeOptions({ iconRetinaUrl: 'https://unpkg.com/leaflet@1.9/dist/images/marker-icon-2x.png', iconUrl: 'https://unpkg.com/leaflet@1.9/dist/images/marker-icon.png', shadowUrl: 'https://unpkg.com/leaflet@1.9/dist/images/marker-shadow.png' })
 
+      if (mapRefInstance.current) mapRefInstance.current.remove()
       const map = L.map(mapRef.current!).setView([37.0, -91.5], 7)
+      mapRefInstance.current = map
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map)
 
       const bounds: [number, number][] = []
@@ -1785,16 +1798,27 @@ function ResourceMap({ resources }: { resources: Resource[] }) {
         L.marker([g.lat, g.lng]).addTo(map).bindPopup(`<b>${g.name}</b><br/>${decodeURIComponent(g.address)}`)
       })
       if (bounds.length > 1) map.fitBounds(bounds, { padding: [30, 30] })
-      else map.setView(bounds[0], 13)
+      else if (bounds.length === 1) { map.setView(bounds[0], 15) }
     })
+    return () => { if (mapRefInstance.current) { mapRefInstance.current.remove(); mapRefInstance.current = null } }
   }, [geocoded])
 
   return (
     <div className="px-3.5 py-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <h3 className="font-display text-[#1B3A6B] text-lg font-semibold">🗺️ Resource Map</h3>
-        <span className="text-sm text-gray-400">{geocoded.length} of {resources.length} resources located</span>
+        <div className="flex items-center gap-3">
+          {focusResource && (
+            <button onClick={onClearFocus} className="text-sm text-[#1B3A6B] underline underline-offset-2">« Back to all</button>
+          )}
+          <span className="text-sm text-gray-400">{geocoded.length} of {resources.length} resources located</span>
+        </div>
       </div>
+      {focusResource && !geoLoading && !geoError && geocoded.length > 0 && (
+        <div className="mb-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg flex-shrink-0">
+          <span className="text-sm font-semibold text-blue-800">📍 {focusResource.name}</span>
+        </div>
+      )}
       {geoLoading && <div className="flex-1 flex items-center justify-center text-gray-400 text-base">Locating addresses on map…</div>}
       {geoError && <div className="flex-1 flex items-center justify-center text-gray-400 text-base">{geoError}</div>}
       <div ref={mapRef} className="w-full flex-1 rounded-xl overflow-hidden border border-gray-200" />
