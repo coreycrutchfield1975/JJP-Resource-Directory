@@ -1109,15 +1109,15 @@ export default function App() {
                   <button onClick={clearFilters} className="mt-4 px-4 py-2 bg-[#1B3A6B] text-white rounded-lg text-sm font-body">Clear filters</button>
                 </div>
               ) : (
-                <div className="flex flex-col divide-y divide-gray-100">
+                <div className="flex flex-col items-center gap-3 px-3.5 pb-4">
                   {chList.map(h => (
-                    <div key={h.id} className="bg-white px-3.5 py-3">
-                      <div className="font-display font-semibold text-[#1B3A6B] text-sm leading-tight mb-0.5">🏠 {h.name}</div>
+                    <div key={h.id} className="w-full max-w-xl bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-4">
+                      <div className="font-display font-semibold text-[#1B3A6B] text-base leading-tight mb-1">🏠 {h.name}</div>
                       {(h.city || h.county) && (
-                        <p className="text-xs text-gray-400 mb-1.5">📍 {[h.city, h.county ? h.county + ' County' : '', h.state].filter(Boolean).join(', ')}</p>
+                        <p className="text-xs text-[#6B7280] mb-1.5 font-medium">📍 {[h.city, h.county ? h.county + ' County' : '', h.state].filter(Boolean).join(', ')}</p>
                       )}
-                      {h.address && <p className="text-xs text-gray-400 mb-1.5">🏢 <a href={`https://www.google.com/maps/search/${encodeURIComponent(h.address + ', ' + (h.city||'') + ', ' + (h.county||'') + ' ' + (h.state||''))}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-1 hover:text-blue-600">{h.address}</a></p>}
-                      <div className="flex flex-wrap gap-1.5 mb-1.5">
+                      {h.address && <p className="text-xs text-[#6B7280] mb-1.5 font-medium">🏢 <a href={`https://www.google.com/maps/search/${encodeURIComponent(h.address + ', ' + (h.city||'') + ', ' + (h.county||'') + ' ' + (h.state||''))}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-1 text-blue-600 hover:text-blue-800">{h.address}</a></p>}
+                      <div className="flex flex-wrap gap-1.5 mb-2">
                         <span className="inline-block text-[0.6rem] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
                           {CARE_HOME_TYPE_LABELS[h.facility_type] || h.facility_type}
                         </span>
@@ -1125,7 +1125,7 @@ export default function App() {
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {h.phone && (
                           <a href={`tel:${h.phone.replace(/[^0-9+]/g, '')}`}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F2F4F8] border border-gray-200 text-[#1B3A6B] font-semibold text-sm active:bg-[#1B3A6B] active:text-white transition-all">
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EEF2FF] border border-blue-200 text-[#1B3A6B] font-semibold text-sm active:bg-[#1B3A6B] active:text-white transition-all">
                             📞 {h.phone}
                           </a>
                         )}
@@ -1182,14 +1182,14 @@ export default function App() {
                   <button onClick={clearFilters} className="mt-4 px-4 py-2 bg-[#1B3A6B] text-white rounded-lg text-sm font-body">Clear filters</button>
                 </div>
               ) : (
-                <div className="flex flex-col divide-y divide-gray-100">
+                <div className="flex flex-col items-center gap-3 px-3.5 pb-4">
                   {nhList.map(h => (
-                    <div key={h.id} className="bg-white px-3.5 py-3">
-                      <div className="font-display font-semibold text-[#1B3A6B] text-sm leading-tight mb-0.5">🏥 {h.name}</div>
+                    <div key={h.id} className="w-full max-w-xl bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-4">
+                      <div className="font-display font-semibold text-[#1B3A6B] text-base leading-tight mb-1">🏥 {h.name}</div>
                       {(h.city || h.county) && (
-                        <p className="text-xs text-gray-400 mb-1.5">📍 {[h.city, h.county ? h.county + ' County' : '', h.state].filter(Boolean).join(', ')}</p>
+                        <p className="text-xs text-[#6B7280] mb-1.5 font-medium">📍 {[h.city, h.county ? h.county + ' County' : '', h.state].filter(Boolean).join(', ')}</p>
                       )}
-                      {h.address && <p className="text-xs text-gray-400 mb-1.5">🏢 {h.address}</p>}
+                      {h.address && <p className="text-xs text-[#6B7280] mb-1.5 font-medium">🏢 <a href={`https://www.google.com/maps/search/${encodeURIComponent(h.address + ', ' + (h.city||'') + ', ' + (h.county||'') + ' ' + (h.state||''))}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-1 text-blue-600 hover:text-blue-800">{h.address}</a></p>}
                       <div className="flex flex-wrap gap-1.5 mb-1.5">
                         {h.va_contract && (
                           <span className="inline-block text-[0.6rem] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-green-100 text-green-800">✓ {h.va_contract}</span>
@@ -1201,7 +1201,7 @@ export default function App() {
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {h.phone && (
                           <a href={`tel:${h.phone.replace(/[^0-9+]/g, '')}`}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F2F4F8] border border-gray-200 text-[#1B3A6B] font-semibold text-sm active:bg-[#1B3A6B] active:text-white transition-all">
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#EEF2FF] border border-blue-200 text-[#1B3A6B] font-semibold text-sm active:bg-[#1B3A6B] active:text-white transition-all">
                             📞 {h.phone}
                           </a>
                         )}
@@ -1763,6 +1763,21 @@ const GREETINGS = [
   "Aloha, warrior! Resources await. 🌺",
   "How's it going, champ? We've got options for you. 🏆",
   "Welcome! Calm before the mission — let's gear up. 🎯",
+  "Boom! You found the resource hub. Let's roll! 🚀",
+  "Hey superstar — your next resource is just a click away! ✨",
+  "Ahoy, veteran! Treasure trove of resources ahead! 🏴‍☠️",
+  "What's crackin', champ? We've got help lined up for you. 🏅",
+  "Well hello there, handsome/gorgeous — let's find what you need! 😄",
+  "Reporting for duty! Your resource guide is ready. 📋",
+  "Welcome, welcome! We're thrilled you're here. 🎉",
+  "Hey legend — time to find some awesome resources. 🔥",
+  "Lookin' good! Let's get you taken care of. 💯",
+  "You're the reason we do this. Let's find some help! ❤️",
+  "Eyes front, soldier! Resources at your command. 🫡",
+  "Coolest veteran on the block just arrived. Let's go! 😎",
+  "You've got mail! Well, resources actually. Lots of 'em. 📬",
+  "Drum roll please... 🥁 Resources! Lots of resources!",
+  "Hey you — yeah, you. You're awesome and we've got help for you. 🙌",
 ]
 
 // ─── Military Facts ────────────────────────────────────────────────────────────
