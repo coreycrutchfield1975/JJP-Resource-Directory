@@ -733,31 +733,31 @@ export default function App() {
         style={{ background: 'linear-gradient(135deg, #0F2347 0%, #1B3A6B 70%, #254e91 100%)', boxShadow: '0 3px 12px rgba(0,0,0,.35)' }}>
 
         {/* Top row */}
-        <div className="flex items-center gap-2 px-3 py-2 border-b-2 border-[#C8941A]" style={{background:'#000'}}>
-          {/* VA Letters */}
-          <div className="flex-shrink-0 pr-2 border-r border-white/20">
+        <div className="flex items-center px-3 py-2 border-b-2 border-[#C8941A]" style={{background:'#000'}}>
+          {/* Left: VA branding */}
+          <div className="flex items-center gap-2 flex-shrink-0 pr-2 border-r border-white/20">
             <span className="font-display font-black text-white tracking-tight" style={{fontSize:'1.6rem',lineHeight:1}}>VA</span>
+            <div className="flex-shrink-0">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Seal_of_the_U.S._Department_of_Veterans_Affairs.svg/120px-Seal_of_the_U.S._Department_of_Veterans_Affairs.svg.png"
+                alt="VA Seal"
+                className="w-9 h-9 object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            </div>
+            <div className="min-w-0 pl-1">
+              <div className="text-white font-semibold font-body leading-tight" style={{fontSize:'.72rem'}}>U.S. Department of Veterans Affairs</div>
+              <div className="text-white/70 font-body leading-tight" style={{fontSize:'.6rem'}}>Veterans Health Administration</div>
+              <div className="text-[#C8941A] font-body leading-tight font-semibold" style={{fontSize:'.6rem'}}>John J. Pershing VA MC</div>
+            </div>
           </div>
-          {/* Official VA Seal */}
-          <div className="flex-shrink-0 px-1">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Seal_of_the_U.S._Department_of_Veterans_Affairs.svg/120px-Seal_of_the_U.S._Department_of_Veterans_Affairs.svg.png"
-              alt="VA Seal"
-              className="w-9 h-9 object-contain"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-            />
+          {/* Center: Helpline */}
+          <div className="flex-1 text-center">
+            <a href="tel:18008271000" className="inline-block text-white font-bold font-body hover:text-[#C8941A] transition-colors" style={{fontSize:'1.1rem',letterSpacing:'0.5px'}}>
+              ☎ VA Benefits Helpline — 800-827-1000
+            </a>
           </div>
-          {/* Benefits Helpline */}
-          <div className="flex-shrink-0 text-center px-2 border-r border-white/20">
-            <div className="text-[#C8941A] font-bold font-body" style={{fontSize:'.75rem',lineHeight:1.2}}>☎ VA Benefits</div>
-            <a href="tel:18008271000" className="text-white font-bold font-body hover:text-[#C8941A] transition-colors" style={{fontSize:'.85rem',lineHeight:1.3,letterSpacing:'0.3px'}}>800-827-1000</a>
-          </div>
-          {/* Text block */}
-          <div className="flex-1 min-w-0 pl-1">
-            <div className="text-white font-semibold font-body leading-tight" style={{fontSize:'.72rem'}}>U.S. Department of Veterans Affairs</div>
-            <div className="text-white/70 font-body leading-tight" style={{fontSize:'.6rem'}}>Veterans Health Administration</div>
-            <div className="text-[#C8941A] font-body leading-tight font-semibold" style={{fontSize:'.6rem'}}>John J. Pershing VA Medical Center</div>
-          </div>
+          {/* Right: Admin */}
           <button onClick={() => isAdmin ? doLogout() : openModal('login')}
             className={`text-xs px-2.5 py-1.5 rounded-md border font-body transition-all flex-shrink-0 ${isAdmin
               ? 'bg-amber-800 border-amber-700 text-white'
