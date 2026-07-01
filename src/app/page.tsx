@@ -439,6 +439,38 @@ export default function App() {
     alert(`Import complete: ${successCount} added${errorCount ? `, ${errorCount} failed` : ''}.`)
   }
 
+  // ─── Export ───────────────────────────────────────────────────────────────────
+  function exportCSV() {
+    var rows: any[], cols: string
+    if (view === 'resources') {
+      rows = resources; cols = 'name,type,state,county,city,phone,address,notes,pinned'
+    } else if (view === 'hotlines') {
+      rows = hotlines; cols = 'name,phone,state,category,notes'
+    } else if (view === 'nursing_homes') {
+      rows = nursingHomes; cols = 'name,state,county,city,address,phone,fax,behavioral_unit,va_contract'
+    } else {
+      rows = careHomes; cols = 'name,state,county,city,address,phone,fax,facility_type'
+    }
+    if (!rows.length) { alert('No data to export.'); return }
+    var csvRows = [cols]
+    rows.forEach(function(r: any) {
+      var vals = cols.split(',').map(function(c: string) {
+        var v = r[c.trim()];
+        if (v === null || v === undefined) return '';
+        var s = String(v);
+        return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s;
+      });
+      csvRows.push(vals.join(','));
+    });
+    var blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'jjp_' + view + '_export_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   // ─── Share ───────────────────────────────────────────────────────────────────
   async function shareResource(r: Resource, method: 'email' | 'sms', contact: string) {
     const body = `Veterans Resource: ${r.name}\nType: ${r.type}\nPhone: ${r.phone}\nAddress: ${r.address}${r.city ? ', ' + r.city : ''}${r.county ? ', ' + r.county + ' County' : ''}${r.notes ? '\nNotes: ' + r.notes : ''}\n\nFrom: Veterans Resource Directory — John J. Pershing VA`
@@ -873,6 +905,7 @@ export default function App() {
               {view === 'resources' && (
                 <button onClick={() => { setCsvRows([]); openModal('import_csv') }} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">📥 Import CSV</button>
               )}
+              <button onClick={exportCSV} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">📤 Export CSV</button>
               <button onClick={() => openModal('settings')} className="px-2.5 py-1 rounded text-xs bg-white/15 text-white border border-white/25 active:bg-white/25">⚙️ Settings</button>
               <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={handleCSVFile} />
             </div>
