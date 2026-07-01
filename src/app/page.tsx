@@ -926,6 +926,18 @@ export default function App() {
           </div>
         )}
 
+        {/* ── GREETING + FACT ── */}
+        {!loading && (
+          <div className="text-center px-3.5 pt-4 pb-2">
+            <div className="text-xl md:text-2xl font-display font-bold text-[#1B3A6B] leading-tight">
+              {GREETINGS[Math.floor(Math.random() * GREETINGS.length)]}
+            </div>
+            <div className="mt-2 text-sm text-[#C8941A] font-body font-semibold max-w-xl mx-auto leading-relaxed">
+              🇺🇸 {MILITARY_FACTS[Math.floor(Math.random() * MILITARY_FACTS.length)]}
+            </div>
+          </div>
+        )}
+
         {/* ── RESOURCES VIEW ── */}
         {!loading && view === 'resources' && (
           <>
@@ -963,31 +975,31 @@ export default function App() {
                 <button onClick={clearFilters} className="mt-4 px-4 py-2 bg-[#1B3A6B] text-white rounded-lg text-sm font-body">Clear filters</button>
               </div>
             ) : (
-              <div className="flex flex-col divide-y divide-gray-100">
+              <div className="flex flex-col items-center gap-3 px-3.5 pb-4">
                 {pageItems.map(r => (
-                  <div key={r.id} className={`card-tap bg-white px-3.5 py-3 relative ${r.pinned ? 'border-l-4 border-l-amber-400 pl-3' : ''}`}>
-                    {r.pinned && <div className="absolute top-0 right-2.5 bg-amber-400 text-white text-[0.5rem] font-display font-bold px-2 py-0.5 rounded-b-md tracking-wider">⭐ PINNED</div>}
-                    <div className="flex items-start gap-2 mb-1">
-                      <span className="text-xl leading-none mt-0.5 flex-shrink-0">{TYPE_META[r.type]?.icon || '📋'}</span>
+                  <div key={r.id} className={`card-tap w-full max-w-xl bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-4 relative ${r.pinned ? 'border-l-4 border-l-amber-400' : ''}`}>
+                    {r.pinned && <div className="absolute top-0 right-3 bg-amber-400 text-white text-[0.6rem] font-display font-bold px-2 py-0.5 rounded-b-md tracking-wider">⭐ PINNED</div>}
+                    <div className="flex items-start gap-3 mb-2">
+                      <span className="text-2xl leading-none mt-0.5 flex-shrink-0">{TYPE_META[r.type]?.icon || '📋'}</span>
                       <div className="flex-1 min-w-0">
-                        <div className="font-display font-semibold text-[#1B3A6B] text-sm leading-tight">{r.name}</div>
-                        <span className={`inline-block text-[0.58rem] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full mt-0.5 ${TYPE_META[r.type]?.badge || 'bg-gray-100 text-gray-600'}`}>{r.type}</span>
+                        <div className="font-display font-semibold text-[#1B3A6B] text-base leading-tight">{r.name}</div>
+                        <span className={`inline-block text-[0.6rem] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full mt-1 ${TYPE_META[r.type]?.badge || 'bg-blue-100 text-blue-700'}`}>{r.type}</span>
                       </div>
                     </div>
                     {(r.city || r.county) && (
-                      <p className="text-xs text-gray-400 ml-7 mb-1">📍 {[r.city, r.county, r.state].filter(Boolean).join(', ')}</p>
+                      <p className="text-xs text-[#6B7280] ml-9 mb-1.5 font-medium">📍 {[r.city, r.county, r.state].filter(Boolean).join(', ')}</p>
                     )}
                     {r.phone && (
                       <a href={`tel:${r.phone.replace(/[^0-9+]/g, '')}`}
-                        className="ml-7 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#F2F4F8] border border-gray-200 text-[#1B3A6B] font-semibold text-sm active:bg-[#1B3A6B] active:text-white transition-all">
+                        className="ml-9 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#EEF2FF] border border-blue-200 text-[#1B3A6B] font-semibold text-sm active:bg-[#1B3A6B] active:text-white transition-all">
                         📞 {r.phone}
                       </a>
                     )}
-                    {r.address && <p className="text-xs text-gray-400 ml-7 mt-1">🏢 <a href={`https://www.google.com/maps/search/${encodeURIComponent(r.address + ', ' + (r.city||'') + ', ' + (r.county||'') + ' ' + (r.state||''))}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-1 hover:text-blue-600">{r.address}</a></p>}
+                    {r.address && <p className="text-xs text-[#6B7280] ml-9 mt-1 font-medium">🏢 <a href={`https://www.google.com/maps/search/${encodeURIComponent(r.address + ', ' + (r.city||'') + ', ' + (r.county||'') + ' ' + (r.state||''))}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-1 text-blue-600 hover:text-blue-800">{r.address}</a></p>}
                     {r.notes && (
-                      <div className="ml-7 mt-1.5 text-xs text-amber-800 bg-amber-50 border-l-2 border-amber-400 px-2 py-1 rounded-r">📝 {r.notes}</div>
+                      <div className="ml-9 mt-1.5 text-xs text-amber-800 bg-amber-50 border-l-2 border-amber-400 px-2 py-1 rounded-r">📝 {r.notes}</div>
                     )}
-                    <div className="ml-7 mt-2 flex gap-1.5">
+                    <div className="ml-9 mt-2 flex gap-1.5">
                       <button onClick={() => { setShareTarget(r); openModal('share') }}
                         className="px-2.5 py-1 rounded text-xs bg-[#1B3A6B]/10 text-[#1B3A6B] font-body active:bg-[#1B3A6B] active:text-white transition-all">
                         📤 Share
@@ -1738,6 +1750,39 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const fi = "w-full px-3 py-2.5 rounded-lg border-2 border-gray-200 font-body text-sm text-gray-900 outline-none focus:border-[#1B3A6B] transition-all bg-white"
+
+// ─── Greetings ─────────────────────────────────────────────────────────────────
+const GREETINGS = [
+  "Howdy Doody, you beautiful person! 🌟",
+  "Hey there, hero! Ready to find what you need? 💪",
+  "Welcome back, friend — we've got your six! 🤝",
+  "Good day, veteran! Let's get you connected. 🇺🇸",
+  "You served us, now let us serve you! 🎖️",
+  "Hey now, you're a rockstar — let's find some resources! ⭐",
+  "Salute! You're in the right place. 🫡",
+  "Aloha, warrior! Resources await. 🌺",
+  "How's it going, champ? We've got options for you. 🏆",
+  "Welcome! Calm before the mission — let's gear up. 🎯",
+]
+
+// ─── Military Facts ────────────────────────────────────────────────────────────
+const MILITARY_FACTS = [
+  "The US Army was founded on June 14, 1775 — over 248 years of service.",
+  "The US Navy operates over 290 deployable battle force ships.",
+  "The US Air Force was originally part of the US Army until 1947.",
+  "The Marine Corps is older than the United States itself — founded 1775.",
+  "Space Force became the 6th independent US military branch in 2019.",
+  "The Coast Guard is the only military branch that can operate under the Department of Homeland Security.",
+  "The National Guard traces back to 1636 — the oldest military force in the US.",
+  "Over 200,000 women currently serve in the US armed forces.",
+  "The VA operates the largest integrated healthcare system in the US — over 1,200 facilities.",
+  "There are over 18 million living veterans in the United States today.",
+  "The GI Bill has helped over 25 million veterans pursue education since 1944.",
+  "The Tomb of the Unknown Soldier has been guarded 24/7 since 1937.",
+  "VA National Cemeteries serve as the final resting place for over 4 million veterans.",
+  "The Purple Heart is the oldest US military decoration still in use — established 1782.",
+  "More than 3.5 million veterans have received VA disability compensation for service-connected conditions."
+]
 
 // ─── Map View ──────────────────────────────────────────────────────────────────
 function ResourceMap({ resources, focusResource, onClearFocus }: { resources: Resource[]; focusResource: Resource | null; onClearFocus: () => void }) {
