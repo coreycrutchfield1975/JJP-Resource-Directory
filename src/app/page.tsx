@@ -740,12 +740,17 @@ export default function App() {
           </div>
           {/* Official VA Seal */}
           <div className="flex-shrink-0 px-1">
-            <img
-              src="https://www.va.gov/img/design/logo/va-seal.png"
-              alt="VA Seal"
-              className="w-9 h-9 object-contain"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-            />
+            <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="48" fill="#003F72" stroke="#C8941A" strokeWidth="2"/>
+              <text x="50" y="42" textAnchor="middle" fill="white" fontSize="14" fontFamily="serif" fontWeight="bold">VA</text>
+              <text x="50" y="62" textAnchor="middle" fill="white" fontSize="6" fontFamily="sans-serif">U.S.</text>
+              <text x="50" y="74" textAnchor="middle" fill="#C8941A" fontSize="5" fontFamily="sans-serif">★ ★ ★</text>
+            </svg>
+          </div>
+          {/* Benefits Helpline */}
+          <div className="flex-shrink-0 text-center px-2 border-r border-white/20">
+            <div className="text-[#C8941A] font-bold font-body" style={{fontSize:'.75rem',lineHeight:1.2}}>☎ VA Benefits</div>
+            <a href="tel:18008271000" className="text-white font-bold font-body hover:text-[#C8941A] transition-colors" style={{fontSize:'.85rem',lineHeight:1.3,letterSpacing:'0.3px'}}>800-827-1000</a>
           </div>
           {/* Text block */}
           <div className="flex-1 min-w-0 pl-1">
