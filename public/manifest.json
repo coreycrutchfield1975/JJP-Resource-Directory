@@ -1,14 +1,21 @@
 {
   "name": "Veterans Resource Directory",
   "short_name": "VA Resources",
-  "description": "John J. Pershing VA Medical Center — Southeast Missouri & Arkansas",
+  "description": "John J. Pershing VA Medical Center — Resource guide for veterans and families across 55+ counties",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0F2347",
-  "theme_color": "#0F2347",
-  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#1B3A6B",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
   ]
 }

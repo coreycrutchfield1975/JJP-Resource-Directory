@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase, Resource, Hotline, NursingHome, CareHome, TYPE_META, RESOURCE_TYPES, HOTLINE_CATEGORIES, STATES, NH_STATES, CARE_HOME_TYPES, CARE_HOME_TYPE_LABELS } from '@/lib/supabase'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type View = 'resources' | 'hotlines' | 'nursing_homes' | 'care_homes'
+type View = 'resources' | 'hotlines' | 'nursing_homes' | 'care_homes' | 'map'
 type Modal = 'none' | 'crisis' | 'resource' | 'hotline' | 'share' | 'suggest' | 'login' | 'settings' | 'share_nh' | 'edit_nh' | 'share_ch' | 'edit_ch' | 'import_csv'
 
 const PAGE_SIZE = 30
@@ -881,7 +881,7 @@ export default function App() {
 
         {/* Tabs */}
         <div className="flex bg-[#0F2347]">
-          {([['resources', '📋 Resources'], ['hotlines', '📞 Hotlines'], ['nursing_homes', '🏥 Nursing Homes'], ['care_homes', '🏠 Care Homes']] as [View, string][]).map(([v, label]) => (
+          {([['resources', '📋 Resources'], ['hotlines', '📞 Hotlines'], ['nursing_homes', '🏥 Nursing Homes'], ['care_homes', '🏠 Care Homes'], ['map', '🗺️ Map']] as [View, string][]).map(([v, label]) => (
             <button key={v} onClick={() => { setView(v); scrollRef.current?.scrollTo(0, 0) }}
               className={`flex-1 py-2.5 font-display text-[0.6rem] tracking-widest uppercase border-b-[3px] transition-all ${
                 view === v ? 'text-[#F0C84A] border-[#C8941A]' : 'text-white/40 border-transparent'}`}>
@@ -980,7 +980,7 @@ export default function App() {
                         📞 {r.phone}
                       </a>
                     )}
-                    {r.address && <p className="text-xs text-gray-400 ml-7 mt-1">🏢 {r.address}</p>}
+                    {r.address && <p className="text-xs text-gray-400 ml-7 mt-1">🏢 <a href={`https://www.google.com/maps/search/${encodeURIComponent(r.address + ', ' + (r.city||'') + ', ' + (r.county||'') + ' ' + (r.state||''))}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-1 hover:text-blue-600">{r.address}</a></p>}
                     {r.notes && (
                       <div className="ml-7 mt-1.5 text-xs text-amber-800 bg-amber-50 border-l-2 border-amber-400 px-2 py-1 rounded-r">📝 {r.notes}</div>
                     )}
@@ -1096,7 +1096,7 @@ export default function App() {
                       {(h.city || h.county) && (
                         <p className="text-xs text-gray-400 mb-1.5">📍 {[h.city, h.county ? h.county + ' County' : '', h.state].filter(Boolean).join(', ')}</p>
                       )}
-                      {h.address && <p className="text-xs text-gray-400 mb-1.5">🏢 {h.address}</p>}
+                      {h.address && <p className="text-xs text-gray-400 mb-1.5">🏢 <a href={`https://www.google.com/maps/search/${encodeURIComponent(h.address + ', ' + (h.city||'') + ', ' + (h.county||'') + ' ' + (h.state||''))}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-1 hover:text-blue-600">{h.address}</a></p>}
                       <div className="flex flex-wrap gap-1.5 mb-1.5">
                         <span className="inline-block text-[0.6rem] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
                           {CARE_HOME_TYPE_LABELS[h.facility_type] || h.facility_type}
@@ -1215,6 +1215,9 @@ export default function App() {
           )
         })()}
       </div>
+
+      {/* ── MAP VIEW ── */}
+      {!loading && view === 'map' && <ResourceMap resources={results} />}
 
       {/* ── CRISIS FLOAT BUTTON ── */}
       <button id="crisis-btn" onClick={() => openModal('crisis')}
@@ -1727,3 +1730,74 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const fi = "w-full px-3 py-2.5 rounded-lg border-2 border-gray-200 font-body text-sm text-gray-900 outline-none focus:border-[#1B3A6B] transition-all bg-white"
+
+// ─── Map View ──────────────────────────────────────────────────────────────────
+function ResourceMap({ resources }: { resources: Resource[] }) {
+  const mapRef = useRef<HTMLDivElement>(null)
+  const [geocoded, setGeocoded] = useState<{ lat: number; lng: number; name: string; address: string }[]>([])
+  const [geoLoading, setGeoLoading] = useState(false)
+  const [geoError, setGeoError] = useState('')
+
+  useEffect(() => {
+    if (!resources.length || geocoded.length) return
+    const toGeo = resources.filter(r => r.address).slice(0, 100)
+    if (!toGeo.length) { setGeoError('No resources with addresses to map.'); return }
+    setGeoLoading(true)
+
+    ;(async () => {
+      const results: ({ lat: number; lng: number; name: string; address: string } | null)[] = []
+      for (let i = 0; i < toGeo.length; i++) {
+        const r = toGeo[i]
+        const q = encodeURIComponent([r.address, r.city, r.county, r.state].filter(Boolean).join(', '))
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
+            headers: { 'User-Agent': 'VeteransResourceDirectory/1.0' }
+          })
+          const data = await res.json()
+          results.push(data && data[0] ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: r.name, address: q } : null)
+        } catch { results.push(null) }
+        // Nominatim rate limit: 1 req/sec
+        if (i < toGeo.length - 1) await new Promise(r => setTimeout(r, 1100))
+      }
+      const valid = results.filter(Boolean) as { lat: number; lng: number; name: string; address: string }[]
+      setGeocoded(valid)
+      setGeoLoading(false)
+      if (!valid.length) setGeoError('Could not locate any addresses on the map.')
+    })()
+  }, [resources])
+
+  useEffect(() => {
+    if (!mapRef.current || !geocoded.length) return
+    let L: any
+    import('leaflet').then(mod => {
+      L = mod.default
+      // Fix default icon paths
+      delete (L.Icon.Default.prototype as any)._getIconUrl
+      L.Icon.Default.mergeOptions({ iconRetinaUrl: 'https://unpkg.com/leaflet@1.9/dist/images/marker-icon-2x.png', iconUrl: 'https://unpkg.com/leaflet@1.9/dist/images/marker-icon.png', shadowUrl: 'https://unpkg.com/leaflet@1.9/dist/images/marker-shadow.png' })
+
+      const map = L.map(mapRef.current!).setView([37.0, -91.5], 7)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map)
+
+      const bounds: [number, number][] = []
+      geocoded.forEach(g => {
+        bounds.push([g.lat, g.lng])
+        L.marker([g.lat, g.lng]).addTo(map).bindPopup(`<b>${g.name}</b><br/>${decodeURIComponent(g.address)}`)
+      })
+      if (bounds.length > 1) map.fitBounds(bounds, { padding: [30, 30] })
+      else map.setView(bounds[0], 13)
+    })
+  }, [geocoded])
+
+  return (
+    <div className="px-3.5 py-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-display text-[#1B3A6B] text-sm font-semibold">🗺️ Resource Map</h3>
+        <span className="text-xs text-gray-400">{geocoded.length} of {resources.length} resources located</span>
+      </div>
+      {geoLoading && <div className="text-center py-8 text-gray-400 text-sm">Locating addresses on map…</div>}
+      {geoError && <div className="text-center py-8 text-gray-400 text-sm">{geoError}</div>}
+      <div ref={mapRef} className="w-full rounded-xl overflow-hidden border border-gray-200" style={{ height: '70vh' }} />
+      <p className="text-xs text-gray-400 mt-2">📍 Showing up to {geocoded.length || 100} mapped resources. Tap a marker for details.</p>
+    </div>
+  )
+}
