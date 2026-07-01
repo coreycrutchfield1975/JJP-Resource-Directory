@@ -755,6 +755,9 @@ export default function App() {
           <div className="flex-1"></div>
           {/* Right: Helpline + Admin */}
           <div className="flex items-center gap-3 flex-shrink-0">
+            <button onClick={() => document.documentElement.classList.toggle('dark')} className="text-white/60 hover:text-white transition-colors text-base" title="Toggle dark mode">
+              🌙
+            </button>
             <a href="tel:18008271000" className="inline-block text-white font-bold font-body hover:text-[#C8941A] transition-colors whitespace-nowrap" style={{fontSize:'1.1rem',letterSpacing:'0.5px'}}>
               ☎ 800-827-1000
             </a>
@@ -1577,6 +1580,32 @@ function SettingsPanel({ resources, hotlines, onClose }:
   { resources: Resource[]; hotlines: Hotline[]; onClose: () => void }) {
   const pinned = resources.filter(r => r.pinned).length
   const byType = RESOURCE_TYPES.map(t => ({ t, n: resources.filter(r => r.type === t).length })).filter(x => x.n > 0)
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [loadingSugs, setLoadingSugs] = useState(true)
+
+  useEffect(() => {
+    supabase.from('suggestions').select('*').eq('status', 'pending').order('submitted_at', { ascending: false }).then(({ data }) => {
+      setSuggestions(data || [])
+      setLoadingSugs(false)
+    })
+  }, [])
+
+  async function approveSuggestion(sug: any) {
+    const { error: insertErr } = await supabase.from('resources').insert({
+      name: sug.name, type: sug.type || 'Community', state: sug.state || 'MO',
+      county: sug.county || '', city: sug.city || '', phone: sug.phone || '',
+      address: sug.address || '', notes: sug.notes || '', pinned: false, updated_by: 'suggestion'
+    })
+    if (insertErr) { alert('Error: ' + insertErr.message); return }
+    await supabase.from('suggestions').update({ status: 'approved' }).eq('id', sug.id)
+    setSuggestions(prev => prev.filter(s => s.id !== sug.id))
+  }
+
+  async function rejectSuggestion(sug: any) {
+    await supabase.from('suggestions').update({ status: 'rejected' }).eq('id', sug.id)
+    setSuggestions(prev => prev.filter(s => s.id !== sug.id))
+  }
+
   return (
     <div className="p-4">
       <div className="grid grid-cols-3 gap-2 mb-4">
@@ -1599,6 +1628,32 @@ function SettingsPanel({ resources, hotlines, onClose }:
           </div>
         ))}
       </div>
+
+      {/* Pending Suggestions */}
+      <div className="mt-4 pt-3 border-t border-gray-100">
+        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">📬 Pending Suggestions ({suggestions.length})</div>
+        {loadingSugs ? (
+          <p className="text-xs text-gray-400">Loading…</p>
+        ) : suggestions.length === 0 ? (
+          <p className="text-xs text-gray-400">No pending suggestions.</p>
+        ) : (
+          <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+            {suggestions.map(sug => (
+              <div key={sug.id} className="bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+                <div className="font-semibold text-sm text-[#1B3A6B]">{sug.name}</div>
+                <div className="text-xs text-gray-500 mt-0.5">{[sug.city, sug.county, sug.state].filter(Boolean).join(', ')}</div>
+                {sug.phone && <div className="text-xs text-gray-500">{sug.phone}</div>}
+                {sug.notes && <div className="text-xs text-amber-800 mt-1">📝 {sug.notes}</div>}
+                <div className="flex gap-1.5 mt-2">
+                  <button onClick={() => approveSuggestion(sug)} className="px-2.5 py-1 rounded text-xs bg-green-100 text-green-800 font-semibold active:bg-green-600 active:text-white">✅ Approve</button>
+                  <button onClick={() => rejectSuggestion(sug)} className="px-2.5 py-1 rounded text-xs bg-red-100 text-red-800 font-semibold active:bg-red-600 active:text-white">❌ Reject</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-400 font-body">
         <p>To add staff accounts, go to your Supabase dashboard → Authentication → Invite user.</p>
       </div>

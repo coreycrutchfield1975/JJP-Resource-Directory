@@ -20,6 +20,35 @@
 
 html, body { height: 100%; }
 
+/* Dark mode */
+.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+.dark .card-tap {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+.dark .max-w-3xl .bg-white {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+.dark .max-w-3xl .text-gray-400,
+.dark .max-w-3xl .text-gray-500,
+.dark .max-w-3xl .text-gray-600 {
+  color: #94a3b8 !important;
+}
+.dark .max-w-3xl .text-gray-700,
+.dark .max-w-3xl .text-gray-900 {
+  color: #e2e8f0 !important;
+}
+.dark .bg-\\[\\#F2F4F8\\] { background: #1e293b !important; }
+.dark .divide-gray-100 > * { border-color: #334155 !important; }
+.dark .border-gray-100 { border-color: #334155 !important; }
+.dark .border-gray-200 { border-color: #334155 !important; }
+.dark .bg-white { background: #1e293b !important; }
+.dark .text-gray-700 { color: #e2e8f0 !important; }
+
 body {
   font-family: 'Source Sans 3', sans-serif;
   background: #F2F4F8;
