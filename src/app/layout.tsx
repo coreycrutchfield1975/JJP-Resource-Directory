@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: 'John J. Pershing VA Medical Center — Southeast Missouri & Arkansas',
   manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'VA Resources' },
+  icons: { icon: '/icon.svg', apple: '/icon.svg' },
 }
 
 export const viewport: Viewport = {
