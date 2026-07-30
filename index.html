@@ -7,32 +7,69 @@
 <link rel="stylesheet" href="uswds/package/dist/css/uswds.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-body{background:#f0f4f8}
-.usa-header{background:#112e51;border-bottom:4px solid #fdb81e}
-.usa-header .usa-logo a{color:#fff;font-weight:700}
-.jjp-nav{background:#fff;border-bottom:1px solid #dfe1e2;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.jjp-nav .usa-nav__link{font-size:.85rem;padding:.6rem 1rem;color:#3d4551}
-.jjp-nav .usa-nav__link.usa-current{color:#005ea2;border-bottom:3px solid #005ea2;font-weight:700}
+/* ── JJP — Dark Crystal over USWDS ── */
+:root{
+  --cn-navy:#0a1628;
+  --cn-navy2:#0f2240;
+  --cn-gold:#c9a227;
+  --cn-gold2:#e2c96e;
+  --cn-cyan:#22d3ee;
+  --cn-surface:rgba(15,34,64,.85);
+  --cn-border:rgba(201,162,39,.15);
+  --cn-text:#d0e0f5;
+  --cn-muted:#5a7a9a;
+}
+body{background:var(--cn-navy);color:var(--cn-text)}
+.usa-header{background:var(--cn-navy2);border-bottom:2px solid var(--cn-gold)}
+.usa-header .usa-logo a{color:var(--cn-gold2);font-weight:700;text-shadow:0 0 12px rgba(201,162,39,.3)}
+.jjp-nav{background:var(--cn-surface);backdrop-filter:blur(12px);border-bottom:1px solid var(--cn-border)}
+.jjp-nav .usa-nav__link{font-size:.85rem;padding:.6rem 1rem;color:var(--cn-muted)}
+.jjp-nav .usa-nav__link.usa-current{color:var(--cn-gold2);border-bottom:2px solid var(--cn-gold);font-weight:700}
+.jjp-nav .usa-nav__link:hover{color:var(--cn-text)}
 .jjp-section{display:none}
 .jjp-section.active{display:block}
-.jjp-card{background:#fff;border:1px solid #dfe1e2;border-radius:6px;padding:1rem;margin-bottom:.75rem;transition:box-shadow .15s}
-.jjp-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.jjp-card{
+  background:var(--cn-surface);backdrop-filter:blur(16px);
+  border:1px solid var(--cn-border);border-radius:8px;
+  padding:1rem;margin-bottom:.75rem;
+  box-shadow:0 4px 24px rgba(0,0,0,.3),0 0 0 1px rgba(201,162,39,.05);
+  color:var(--cn-text);
+}
+.jjp-card:hover{border-color:rgba(201,162,39,.25);box-shadow:0 4px 32px rgba(0,0,0,.4),0 0 0 1px rgba(201,162,39,.1)}
 .jjp-card .type-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.type-Emergency{background:#fde2e2;color:#981b1b}
-.type-Food{background:#dcfce7;color:#166534}
-.type-Housing{background:#dbeafe;color:#1e40af}
-.type-Veteran{background:#ede9fe;color:#5b21b6}
-.type-Community{background:#fef3c7;color:#92400e}
-.type-Assistance{background:#ffedd5;color:#9a3412}
-.type-Transportation{background:#ccfbf1;color:#134e4a}
-.type-Legal{background:#fce7f3;color:#831843}
-.type-Health{background:#cffafe;color:#155e75}
-.type-Charity{background:#e0e7ff;color:#3730a3}
-#map{height:450px;border-radius:8px;border:1px solid #dfe1e2}
-.county-chip{display:inline-block;padding:4px 10px;margin:3px;border-radius:20px;background:#dbeafe;color:#1e40af;font-size:.8rem;cursor:pointer;transition:all .15s}
-.county-chip:hover{background:#bfdbfe}
-.county-chip.active{background:#112e51;color:#fff}
-.usa-accordion__button{background:none;border:none;font-size:1rem;font-weight:700;width:100%;text-align:left;padding:.5rem 0;cursor:pointer;color:#112e51}
+.type-Emergency{background:rgba(220,38,38,.15);color:#fca5a5}
+.type-Food{background:rgba(22,163,74,.15);color:#86efac}
+.type-Housing{background:rgba(37,99,235,.15);color:#93c5fd}
+.type-Veteran{background:rgba(124,58,237,.15);color:#c4b5fd}
+.type-Community{background:rgba(202,138,4,.15);color:#fde68a}
+.type-Assistance{background:rgba(194,65,12,.15);color:#fdba74}
+.type-Transportation{background:rgba(20,184,166,.15);color:#5eead4}
+.type-Legal{background:rgba(190,24,93,.15);color:#f9a8d4}
+.type-Health{background:rgba(14,116,144,.15);color:#67e8f9}
+.type-Charity{background:rgba(79,70,229,.15);color:#a5b4fc}
+#map{height:450px;border-radius:8px;border:1px solid var(--cn-border)}
+.county-chip{
+  display:inline-block;padding:4px 10px;margin:3px;border-radius:20px;
+  background:rgba(201,162,39,.1);color:var(--cn-gold2);font-size:.8rem;
+  cursor:pointer;transition:all .15s;border:1px solid rgba(201,162,39,.15);
+}
+.county-chip:hover{background:rgba(201,162,39,.2);border-color:var(--cn-gold)}
+.county-chip.active{background:var(--cn-gold);color:var(--cn-navy)}
+
+/* USWDS overrides */
+.usa-input,.usa-select,.usa-textarea{
+  background:rgba(10,22,40,.8);border:1px solid rgba(201,162,39,.2);
+  color:var(--cn-text);border-radius:6px;
+}
+.usa-input:focus,.usa-select:focus{border-color:var(--cn-gold);box-shadow:0 0 0 3px rgba(201,162,39,.1)}
+.usa-button{background:var(--cn-gold);color:var(--cn-navy);font-weight:700;border:none;border-radius:6px}
+.usa-button:hover{background:var(--cn-gold2);box-shadow:0 4px 16px rgba(201,162,39,.25);color:var(--cn-navy)}
+.usa-button--outline{background:transparent;border:1px solid rgba(201,162,39,.3);color:var(--cn-gold2)}
+.usa-button--outline:hover{background:rgba(201,162,39,.1);border-color:var(--cn-gold);color:var(--cn-gold2)}
+.usa-table{color:var(--cn-text)}
+.usa-table thead th{background:rgba(10,22,40,.6);color:var(--cn-gold2);border-color:var(--cn-border)}
+.usa-table td{border-color:var(--cn-border)}
+.usa-hint{color:var(--cn-muted)}
 @media print{.usa-header,.jjp-nav{display:none!important}.jjp-section{display:block!important}}
 </style>
 </head>
