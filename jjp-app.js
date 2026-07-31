@@ -54,8 +54,7 @@ function renderResources(){
     }
     return true;
   });
-  var html='<p class="usa-hint">'+items.length+' resource(s) found</p>';
-  if(!items.length){document.getElementById('res-list').innerHTML=html;return;}
+  var countEl=document.getElementById('res-count-display');if(countEl)countEl.textContent=items.length+' resource(s) found';var html='';if(!items.length){document.getElementById('res-list').innerHTML='<p class="usa-hint">No resources match.</p>';return;}
   html+=items.slice(0,200).map(function(r){
     var meta=TYPE_META[r.type]||{};
     return '<div class="jjp-card">'+
@@ -117,6 +116,17 @@ function shareResource(id){
   if(navigator.share){navigator.share({title:'JJP Resource',text:txt}).catch(function(){});}
   else{window.open('mailto:?subject=JJP Resource&body='+encodeURIComponent(txt));}
 }
+function printAllResources(){
+  var cards=document.querySelectorAll('#res-list .jjp-card');
+  if(!cards.length){alert('No resources to print.');return;}
+  var html='';
+  cards.forEach(function(c){html+=c.outerHTML;});
+  var w=window.open('','_blank');
+  w.document.write('<html><head><title>JJP Resources</title><style>body{font-family:Arial,sans-serif;padding:20px;max-width:800px;margin:auto}.jjp-card{border:1px solid #ccc;padding:12px;margin-bottom:10px;border-radius:6px;page-break-inside:avoid}.card-menu,.card-menu-btn,.card-menu-dropdown,.usa-button{display:none!important}@media print{.jjp-card{border:1px solid #999}}</style></head><body><h2>JJP Resource Directory</h2>'+html+'</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print()},500);
+}
+
 document.addEventListener('click',function(){
   document.querySelectorAll('.card-menu-dropdown').forEach(function(d){d.style.display='none';});
 });
