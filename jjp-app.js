@@ -160,20 +160,24 @@ function toggleActionMenu(id, closeOnly){
   menu.setAttribute('aria-hidden','false');
   menu.setAttribute('data-open','true');
   if(btn) btn.setAttribute('aria-expanded','true');
-  var first = menu.querySelector('[role="menuitem"]');
-  if(first){
-    // Save current scroll position and restore after focusing to avoid browser auto-scroll/jump
-    var sx = (typeof window.scrollX !== 'undefined') ? window.scrollX : window.pageXOffset;
-    var sy = (typeof window.scrollY !== 'undefined') ? window.scrollY : window.pageYOffset;
-    try{
-      first.focus({preventScroll:true});
-    }catch(e){
-      try{ first.focus(); }catch(e){}
-    }
-    // restore scroll position in next microtask in case browser moved viewport
-    setTimeout(function(){ try{ window.scrollTo(sx, sy); }catch(e){} }, 0);
-  }
+  // Do not programmatically focus the first menu item (prevents browser auto-scroll jumps on some browsers).
+  // Keyboard users opening via keyboard will get focus handled by a dedicated key handler below.
 }
+
+// Keyboard: open menu when Enter/Space pressed on focused menu-button and focus first item without scrolling
+document.addEventListener('keydown', function(e){
+  if((e.key === 'Enter' || e.key === ' ') && document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('menu-button')){
+    e.preventDefault();
+    var id = document.activeElement.id.replace(/-button$/,'');
+    toggleActionMenu(id);
+    setTimeout(function(){
+      var menu = document.getElementById(id);
+      var first = menu && menu.querySelector('[role="menuitem"]');
+      if(first){ try{ first.focus({preventScroll:true}); }catch(err){ try{ first.focus(); }catch(err){} }
+      }
+    }, 0);
+  }
+});
 
 // Close action menus when clicking outside, and support Escape key
 document.addEventListener('click', function(e){ if(!e.target.closest || !e.target.closest('.action-menu-container')) toggleActionMenu(); });
