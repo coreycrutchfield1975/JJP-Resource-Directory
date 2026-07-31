@@ -254,15 +254,57 @@ function shareResource(id){
 function printAllResources(){
   var cards=document.querySelectorAll('#res-list .jjp-card');
   if(!cards.length){alert('No resources to print.');return;}
-  var html='';
+
+  // Group by type
+  var groups={};
+  var typeOrder=['Emergency','Food','Housing','Veteran','Community','Assistance','Transportation','Legal','Health','Charity'];
   for(var i=0;i<cards.length;i++){
+    var badge=cards[i].querySelector('.type-badge');
+    var type=badge?badge.textContent.trim():'Other';
+    if(!groups[type]) groups[type]=[];
     var clone=cards[i].cloneNode(true);
     var menus=clone.querySelectorAll('.card-menu,.card-menu-btn,.card-menu-dropdown');
     for(var j=0;j<menus.length;j++) menus[j].remove();
-    html+=clone.outerHTML;
+    groups[type].push(clone.outerHTML);
   }
+
+  // Get county name from filter
+  var county=document.getElementById('res-county').value||'All Counties';
+  var search=document.getElementById('res-search').value||'';
+  var typeFilter=document.getElementById('res-type').value||'';
+  var subtitle=[county,typeFilter,search].filter(Boolean).join(' — ')||'All Resources';
+  var today=new Date().toLocaleDateString();
+
+  // Build grouped HTML
+  var html='<div class=\"print-header\"><h1>JJP Resource Directory</h1><p><strong>'+cards.length+' resources</strong> • '+subtitle+' • '+today+'</p></div>';
+
+  typeOrder.forEach(function(type){
+    if(groups[type]&&groups[type].length){
+      html+='<h2 class=\"print-section\">'+TYPE_META[type].icon+' '+type+' <span>('+groups[type].length+')</span></h2>';
+      html+=groups[type].join('');
+    }
+  });
+  // Any types not in the order
+  for(var t in groups){
+    if(typeOrder.indexOf(t)===-1){
+      html+='<h2 class=\"print-section\">'+t+' ('+groups[t].length+')</h2>';
+      html+=groups[t].join('');
+    }
+  }
+
   var w=window.open('','_blank');
-  w.document.write('<html><head><title>JJP Resources</title><style>body{font-family:Arial,sans-serif;padding:20px;max-width:800px;margin:auto}.jjp-card{border:1px solid #ccc;padding:12px;margin-bottom:10px;border-radius:6px;page-break-inside:avoid}.usa-button{display:none}@media print{.jjp-card{border:1px solid #999}}</style></head><body><h2>JJP Resource Directory</h2>'+html+'</body></html>');
+  w.document.write('<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>JJP Resources — '+subtitle+'</title><style>'+
+    '*{box-sizing:border-box}body{font-family:Arial,sans-serif;max-width:850px;margin:0 auto;padding:20px;color:#222}'+
+    '.print-header{text-align:center;border-bottom:3px solid #17365d;padding-bottom:12px;margin-bottom:20px}'+
+    '.print-header h1{margin:0;color:#17365d;font-size:22px}.print-header p{color:#555;font-size:13px;margin:4px 0 0}'+
+    '.print-section{color:#17365d;font-size:16px;border-bottom:2px solid #f6c344;padding-bottom:4px;margin:24px 0 10px}'+
+    '.print-section span{font-weight:400;font-size:13px;color:#888}'+
+    '.jjp-card{border:1px solid #ddd;padding:10px 14px;margin-bottom:8px;border-radius:6px;page-break-inside:avoid;font-size:13px}'+
+    '.jjp-card strong{font-size:14px;color:#17365d}'+
+    '.type-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;text-transform:uppercase;margin-left:6px;border:1px solid #ccc}'+
+    '.usa-button{display:none}.card-menu{display:none}'+
+    '@media print{body{padding:10px;font-size:12px}.jjp-card{font-size:11px}}'+
+    '</style></head><body>'+html+'</body></html>');
   w.document.close();
   setTimeout(function(){w.print();},500);
 }
