@@ -86,6 +86,10 @@ body{background:var(--bg);color:var(--text)}
 .card-menu-dropdown{display:none;position:absolute;right:0;top:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;min-width:150px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:4px 0}
 .card-menu-dropdown a,.card-menu-dropdown button{display:block;width:100%;text-align:left;background:transparent;border:none;color:var(--text);padding:8px 14px;font-size:.8rem;cursor:pointer;text-decoration:none}
 .card-menu-dropdown a:hover,.card-menu-dropdown button:hover{background:var(--cn-navy2);color:#fff}
+/* Grid view */
+#res-list.grid-view{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:.75rem}
+#res-list.grid-view .jjp-card{margin-bottom:0}
+@media (max-width:700px){#res-list.grid-view{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -135,9 +139,12 @@ body{background:var(--bg);color:var(--text)}
         </select>
       </div>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;gap:8px;flex-wrap:wrap">
       <span id="res-count-display" class="usa-hint"></span>
-      <button class="usa-button usa-button--outline" onclick="printAllResources()" style="font-size:.75rem;padding:4px 12px">🖨️ Print These Results</button>
+      <div style="display:flex;gap:6px">
+        <button class="usa-button usa-button--outline" onclick="toggleGridView()" style="font-size:.75rem;padding:4px 12px" id="grid-toggle-btn">⊞ Grid View</button>
+        <button class="usa-button usa-button--outline" onclick="printAllResources()" style="font-size:.75rem;padding:4px 12px">🖨️ Print These Results</button>
+      </div>
     </div>
     <div id="res-list"><span class="usa-hint">Loading resources…</span></div>
   </div>

@@ -313,3 +313,16 @@ function printAllResources(){
 document.addEventListener('click',function(){
   document.querySelectorAll('.card-menu-dropdown').forEach(function(d){d.style.display='none';});
 });
+
+// ═══ Grid / List Toggle ═══
+function toggleGridView(){
+  var list=document.getElementById('res-list');
+  var btn=document.getElementById('grid-toggle-btn');
+  if(list.classList.contains('grid-view')){
+    list.classList.remove('grid-view');
+    btn.textContent='⊞ Grid View';
+  }else{
+    list.classList.add('grid-view');
+    btn.textContent='☰ List View';
+  }
+}
