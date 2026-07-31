@@ -12,25 +12,27 @@
 <style>
 /* ── JJP — Lighter VA-friendly palette over USWDS ── */
 :root{
-  /* Slightly lighter, more neutral base while keeping high contrast */
-  --cn-navy:#0f2740; /* lighter than before */
-  --cn-navy2:#143a5a;
-  --cn-gold:#c9a227;
-  --cn-gold2:#e2c96e;
-  --cn-cyan:#22d3ee;
-  --cn-surface:rgba(255,255,255,0.03); /* subtle light surface over navy */
-  --cn-border:rgba(201,162,39,.14);
-  --cn-text:#eef6fb; /* bright text for readability */
-  --cn-muted:#b6cfe6; /* accessible muted */
+ /* Lighter, colorized VA-friendly palette */
+ --cn-bg:#f6f9fb; /* page background: very light blue-gray */
+ --cn-surface:#ffffff; /* card surface */
+ --cn-border:rgba(11,43,59,0.08); /* subtle border */
+ --cn-text:#0b2b3b; /* dark, highly readable text */
+ --cn-muted:#546e7a; /* muted text for hints */
+ --cn-accent:#2b9ba3; /* teal accent */
+ --cn-gold:#c9a227;
+ --cn-gold2:#e2c96e;
+ --cn-cyan:#22d3ee;
+ --cn-navy:#093047;
+ --cn-navy2:#14495f;
 }
 html{font-size:0.95rem;} /* minimum base font size for readability */
-body{background:linear-gradient(180deg,var(--cn-navy),#0b3350 80%);color:var(--cn-text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial}
-.usa-header{background:var(--cn-navy2);border-bottom:2px solid var(--cn-gold)}
-.usa-header .usa-logo a{color:var(--cn-gold2);font-weight:700}
-.jjp-nav{background:rgba(255,255,255,0.02);backdrop-filter:blur(6px);border-bottom:1px solid rgba(255,255,255,0.03)}
+body{background:linear-gradient(180deg,var(--cn-bg),#eef6f9 60%);color:var(--cn-text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial}
+.usa-header{background:linear-gradient(180deg,var(--cn-accent),rgba(43,155,163,0.9));border-bottom:2px solid rgba(11,43,59,0.06)}
+.usa-header .usa-logo a{color:white;font-weight:700}
+.jjp-nav{background:transparent;backdrop-filter:none;border-bottom:1px solid rgba(11,43,59,0.04)}
 .jjp-nav .usa-nav__link{font-size:0.98rem;padding:.65rem 1rem;color:var(--cn-text)}
-.jjp-nav .usa-nav__link.usa-current{color:var(--cn-gold2);border-bottom:2px solid var(--cn-gold);font-weight:700}
-.jjp-nav .usa-nav__link:hover{color:var(--cn-text)}
+.jjp-nav .usa-nav__link.usa-current{color:var(--cn-accent);border-bottom:2px solid var(--cn-accent);font-weight:700}
+.jjp-nav .usa-nav__link:hover{color:var(--cn-accent)}
 .jjp-section{display:none}
 .jjp-section.active{display:block}
 
@@ -40,14 +42,14 @@ body{background:linear-gradient(180deg,var(--cn-navy),#0b3350 80%);color:var(--c
 @media (min-width:1024px){.jjp-list{grid-template-columns:repeat(3,1fr)}}
 
 .jjp-card{
-  background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  background:var(--cn-surface);
   border:1px solid var(--cn-border);border-radius:10px;
   padding:1rem;min-height:88px;
-  box-shadow:0 6px 20px rgba(2,6,23,.35);
+  box-shadow:0 6px 18px rgba(11,43,59,0.06);
   color:var(--cn-text);
   display:flex;flex-direction:column;justify-content:space-between;
 }
-.jjp-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.06);box-shadow:0 10px 30px rgba(2,6,23,.5)}
+.jjp-card:hover{transform:translateY(-2px);border-color:rgba(11,43,59,.12);box-shadow:0 12px 28px rgba(11,43,59,.08)}
 .jjp-card .type-badge{display:inline-block;padding:6px 10px;border-radius:8px;font-size:.88rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
 
 /* Rainbow-friendly accessible palette for badges (soft backgrounds, strong contrast text) */
@@ -65,18 +67,18 @@ body{background:linear-gradient(180deg,var(--cn-navy),#0b3350 80%);color:var(--c
 #map{height:450px;border-radius:8px;border:1px solid var(--cn-border)}
 
 /* County chips are buttons now for accessibility */
-.county-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;margin:6px;border-radius:20px;background:rgba(255,255,255,.03);color:var(--cn-gold2);font-size:.95rem;cursor:pointer;transition:all .12s;border:1px solid rgba(255,255,255,.04)}
-.county-chip:hover{background:rgba(255,255,255,.06);border-color:var(--cn-gold)}
-.county-chip.active{background:var(--cn-gold);color:var(--cn-navy)}
-.county-chip:focus{outline:3px solid rgba(226,201,39,.18);outline-offset:2px}
+.county-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;margin:6px;border-radius:20px;background:transparent;color:var(--cn-accent);font-size:.95rem;cursor:pointer;transition:all .12s;border:1px solid rgba(11,43,59,0.04)}
+.county-chip:hover{background:rgba(43,155,163,0.06);border-color:var(--cn-accent)}
+.county-chip.active{background:var(--cn-accent);color:white}
+.county-chip:focus{outline:3px solid rgba(43,155,163,.18);outline-offset:2px}
 
 /* USWDS overrides */
-.usa-input,.usa-select,.usa-textarea{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,.08);color:var(--cn-text);border-radius:6px;padding:.6rem;min-height:44px}
-/* Make native select dropdowns easier to read: darker menu and light text */
-.usa-select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg, transparent 50%, var(--cn-navy2) 50%), linear-gradient(135deg, var(--cn-navy2) 50%, transparent 50%), linear-gradient(to right, rgba(255,255,255,0.02), rgba(255,255,255,0.02));background-position:calc(100% - 20px) calc(1em + 2px), calc(100% - 15px) calc(1em + 2px), 100% 0;background-size:6px 6px,6px 6px,2.5em 2.5em;background-repeat:no-repeat;padding-right:2.6em}
-.usa-select option{background:var(--cn-navy2);color:var(--cn-text);}
-.usa-select optgroup{background:var(--cn-navy2);color:var(--cn-text);}
-.usa-input:focus,.usa-select:focus{border-color:var(--cn-gold);box-shadow:0 0 0 4px rgba(226,201,39,.12);outline:none}
+.usa-input,.usa-select,.usa-textarea{background:var(--cn-surface);border:1px solid var(--cn-border);color:var(--cn-text);border-radius:6px;padding:.6rem;min-height:44px}
+/* Make native select dropdowns easier to read: simple arrow using accent */
+.usa-select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg, transparent 50%, var(--cn-accent) 50%), linear-gradient(135deg, var(--cn-accent) 50%, transparent 50%), linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0));background-position:calc(100% - 20px) calc(1em + 2px), calc(100% - 15px) calc(1em + 2px), 100% 0;background-size:6px 6px,6px 6px,2.5em 2.5em;background-repeat:no-repeat;padding-right:2.6em}
+.usa-select option{background:var(--cn-surface);color:var(--cn-text);}
+.usa-select optgroup{background:var(--cn-surface);color:var(--cn-text);}
+.usa-input:focus,.usa-select:focus{border-color:var(--cn-accent);box-shadow:0 0 0 4px rgba(43,155,163,.12);outline:none}
 /* Remove low-contrast dropdown native arrow backgrounds on some browsers */
 .usa-select::-ms-expand{display:none}
 @media (prefers-contrast: more){
@@ -86,9 +88,9 @@ body{background:linear-gradient(180deg,var(--cn-navy),#0b3350 80%);color:var(--c
 
 /* Action buttons inside cards */
 .jjp-card .usa-button,.jjp-card .usa-button--outline{padding:.6rem .9rem;min-height:40px;font-size:.95rem;border-radius:8px}
-.usa-button{background:var(--cn-gold);color:var(--cn-navy);font-weight:700;border:none}
-.usa-button--outline{background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--cn-text)}
-.usa-button--outline:hover{background:rgba(255,255,255,.02)}
+.usa-button{background:var(--cn-accent);color:#ffffff;font-weight:700;border:none}
+.usa-button--outline{background:transparent;border:1px solid var(--cn-border);color:var(--cn-accent)}
+.usa-button--outline:hover{background:rgba(43,155,163,0.06)}
 
 .action-small{padding:.4rem .6rem;font-size:.88rem;border-radius:6px}
 
