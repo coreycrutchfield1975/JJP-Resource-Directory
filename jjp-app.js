@@ -74,7 +74,53 @@ function renderResources(){
   }).join('');
   if(items.length>200) html+='<p class="usa-hint">Showing first 200 of '+items.length+' results. Refine your search.</p>';
   document.getElementById('res-list').innerHTML=html;
+  setTimeout(function(){
+    var cards=document.querySelectorAll('#res-list .jjp-card');
+    for(var i=0;i<cards.length;i++){
+      var it=items[i]||{};
+      var id=it.id||('r'+i);
+      cards[i].id='res-'+id;
+      var menu=document.createElement('div');
+      menu.className='card-menu';
+      menu.innerHTML='<button class="card-menu-btn" onclick="toggleCardMenu(event)">⋮</button><div class="card-menu-dropdown"><button onclick="printResource('res-'+id+'')">Print</button><button onclick="copyResource('res-'+id+'')">Copy Text</button><button onclick="shareResource('res-'+id+'')">Share</button></div>';
+      var hdr=cards[i].firstElementChild;
+      if(hdr)hdr.appendChild(menu);
+    }
+  },10);
 }
+
+function toggleCardMenu(event){
+  event.stopPropagation();
+  var dd=event.currentTarget.nextElementSibling;
+  var was=dd.style.display==='block';
+  document.querySelectorAll('.card-menu-dropdown').forEach(function(d){d.style.display='none';});
+  dd.style.display=was?'none':'block';
+}
+function printResource(id){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var w=window.open('','_blank');
+  w.document.write('<html><head><title>JJP Resource</title><style>body{font-family:Arial,sans-serif;padding:20px} .card-menu,.card-menu-btn,.card-menu-dropdown{display:none!important}</style></head><body>'+el.outerHTML+'</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print()},300);
+}
+function copyResource(id){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var txt=el.innerText.trim();
+  navigator.clipboard.writeText(txt).then(function(){alert('Copied!')}).catch(function(){prompt('Copy:',txt)});
+}
+function shareResource(id){
+  var el=document.getElementById(id);
+  if(!el)return;
+  var txt=el.innerText.trim();
+  if(navigator.share){navigator.share({title:'JJP Resource',text:txt}).catch(function(){});}
+  else{window.open('mailto:?subject=JJP Resource&body='+encodeURIComponent(txt));}
+}
+document.addEventListener('click',function(){
+  document.querySelectorAll('.card-menu-dropdown').forEach(function(d){d.style.display='none';});
+});
+
 
 // ═══ Hotlines ═══
 function renderHotlines(){

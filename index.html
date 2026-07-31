@@ -71,6 +71,13 @@ body{background:var(--cn-navy);color:var(--cn-text)}
 .usa-table td{border-color:var(--cn-border)}
 .usa-hint{color:var(--cn-muted)}
 @media print{.usa-header,.jjp-nav{display:none!important}.jjp-section{display:block!important}}
+/* Card action menu */
+.card-menu{position:relative;display:inline-block}
+.card-menu-btn{background:transparent;border:1px solid rgba(201,162,39,.2);color:var(--cn-gold2);cursor:pointer;font-size:1.1rem;padding:2px 8px;border-radius:4px;line-height:1}
+.card-menu-btn:hover{background:rgba(201,162,39,.15);border-color:var(--cn-gold)}
+.card-menu-dropdown{display:none;position:absolute;right:0;top:100%;background:var(--cn-navy2);border:1px solid var(--cn-border);border-radius:6px;min-width:140px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4);padding:4px 0}
+.card-menu-dropdown button{display:block;width:100%;text-align:left;background:transparent;border:none;color:var(--cn-text);padding:8px 14px;font-size:.8rem;cursor:pointer}
+.card-menu-dropdown button:hover{background:rgba(201,162,39,.1);color:var(--cn-gold2)}
 </style>
 </head>
 <body>
