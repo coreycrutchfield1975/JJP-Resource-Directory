@@ -325,9 +325,29 @@ function renderCareHomes(loadMore){
 
 // ═══ Map ═══
 var mapInitialized=false;
+function loadScript(url, cb){
+  var s = document.createElement('script'); s.src = url; s.async = true;
+  s.onload = cb; s.onerror = cb; document.head.appendChild(s);
+}
+function loadCss(url){
+  var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = url; document.head.appendChild(l);
+}
+
 function initMap(){
   if(mapInitialized) return;
   mapInitialized=true;
+  // Load Leaflet assets on demand to avoid blocking initial render
+  if(typeof L === 'undefined'){
+    loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+    loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', function(){
+      try{ _initLeaflet(); } catch(e){ console.error('Leaflet init failed',e); }
+    });
+  } else {
+    _initLeaflet();
+  }
+}
+
+function _initLeaflet(){
   var map=L.map('map').setView([36.7,-92.5],7);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
     attribution:'&copy; OpenStreetMap contributors'
@@ -335,18 +355,63 @@ function initMap(){
   // Add nursing homes to map
   DATA.nursing_homes.forEach(function(n){
     if(n.lat&&n.lng){
-      L.marker([n.lat,n.lng]).addTo(map).bindPopup('<strong>'+n.name+'</strong><br>'+n.address+'<br><a href="tel:'+n.phone+'">'+n.phone+'</a>');
+      L.marker([n.lat,n.lng]).addTo(map).bindPopup('<strong>'+escapeHtml(n.name)+'</strong><br>'+escapeHtml(n.address||'')+'<br><a href="tel:'+escapeHtml(n.phone||'')+'">'+escapeHtml(n.phone||'')+'</a>');
     }
   });
   // Add care homes
   DATA.care_homes.forEach(function(c){
     if(c.lat&&c.lng){
-      L.marker([c.lat,c.lng],{icon:L.divIcon({className:'ch-marker',html:'🏠',iconSize:[20,20]})}).addTo(map).bindPopup('<strong>'+c.name+'</strong><br>'+c.address+'<br><a href="tel:'+c.phone+'">'+c.phone+'</a>');
+      L.marker([c.lat,c.lng],{icon:L.divIcon({className:'ch-marker',html:'🏠',iconSize:[20,20]})}).addTo(map).bindPopup('<strong>'+escapeHtml(c.name)+'</strong><br>'+escapeHtml(c.address||'')+'<br><a href="tel:'+escapeHtml(c.phone||'')+'">'+escapeHtml(c.phone||'')+'</a>');
     }
   });
 }
 
 // ═══ Counties ═══
+function countyUrl(county){
+  try{ var url=new URL(window.location.href); url.searchParams.set('county', county); return url.toString(); }catch(e){ return window.location.href; }
+}
+
+function getCountyResources(county){
+  return DATA.resources.filter(function(r){ return r.county===county; });
+}
+
+function shareCounty(county){
+  var items = getCountyResources(county);
+  var title = 'Resources in '+county;
+  var text = items.slice(0,50).map(function(i){ return (i.name || '') + (i.phone?(' — '+i.phone):''); }).join('\n');
+  var url = countyUrl(county);
+  if(navigator.share){ navigator.share({title:title,text:text,url:url}).catch(function(){}); }
+  else { var body = encodeURIComponent(text + '\n' + url); window.location.href = 'mailto:?subject='+encodeURIComponent(title)+'&body='+body; }
+}
+
+function copyCountyLink(county){
+  var url = countyUrl(county);
+  if(navigator.clipboard){ navigator.clipboard.writeText(url).then(function(){alert('County link copied to clipboard');}); }
+  else { prompt('Copy this link', url); }
+}
+
+function textCounty(county){
+  var items = getCountyResources(county);
+  var text = items.slice(0,50).map(function(i){ return (i.name || '') + (i.phone?(' — '+i.phone):''); }).join('\n');
+  var body = encodeURIComponent('Resources in '+county+'\n\n'+text+'\n\n'+countyUrl(county));
+  // Open SMS composer without number; mobile will open messaging app
+  window.location.href = 'sms:?body='+body;
+}
+
+function printCounty(county){
+  var items = getCountyResources(county);
+  var w = window.open('','_blank');
+  var html = '<!doctype html><html><head><meta charset="utf-8"><title>Print: '+escapeHtml(county)+'</title>'+
+    '<style>body{font-family:Arial,Helvetica,sans-serif;padding:20px;color:#000} h1{font-size:22px} table{width:100%;border-collapse:collapse} td,th{padding:8px;border:1px solid #ccc;text-align:left}</style></head><body>';
+  html += '<h1>Resources in '+escapeHtml(county)+'</h1>';
+  html += '<table><thead><tr><th>Name</th><th>Phone</th><th>Address</th></tr></thead><tbody>';
+  items.forEach(function(i){ html += '<tr><td>'+escapeHtml(i.name||'')+'</td><td>'+escapeHtml(i.phone||'')+'</td><td>'+escapeHtml(i.address||'')+'</td></tr>'; });
+  html += '</tbody></table>';
+  html += '<p>Source: '+escapeHtml(countyUrl(county))+'</p>';
+  html += '</body></html>';
+  w.document.write(html); w.document.close(); w.focus(); setTimeout(function(){ w.print(); }, 500);
+}
+
 function renderCounties(){
   var counties={};
   DATA.resources.forEach(function(r){
@@ -358,8 +423,15 @@ function renderCounties(){
     var count=counties[c];
     var nhCount=DATA.nursing_homes.filter(function(n){return n.county===c;}).length;
     var chCount=DATA.care_homes.filter(function(ch){return ch.county===c;}).length;
-    return '<button type="button" class="county-chip" onclick="filterByCounty(\''+c.replace(/'/g,"\\'")+'\')">'+
-      escapeHtml(c)+' <span style="font-weight:400;opacity:.7">('+count+' resources'+(nhCount?' • '+nhCount+' NH':'')+(chCount?' • '+chCount+' CH':'')+')</span></button>';
+    var safe = c.replace(/'/g,"\\'");
+    return '<div style="display:flex;align-items:center;justify-content:space-between;margin:6px">'+
+      '<button type="button" class="county-chip" onclick="filterByCounty(\''+safe+'\')">'+escapeHtml(c)+' <span style="font-weight:400;opacity:.7">('+count+' resources'+(nhCount?' • '+nhCount+' NH':'')+(chCount?' • '+chCount+' CH':'')+')</span></button>'+
+      '<div style="display:flex;gap:6px;margin-left:8px">'+
+        '<button class="usa-button--outline action-small" onclick="shareCounty(\''+safe+'\')" aria-label="Share '+escapeHtml(c)+'">🔗</button>'+
+        '<button class="usa-button--outline action-small" onclick="textCounty(\''+safe+'\')" aria-label="Text '+escapeHtml(c)+'">✉️</button>'+
+        '<button class="usa-button action-small" onclick="printCounty(\''+safe+'\')" aria-label="Print '+escapeHtml(c)+'">🖨️</button>'+
+        '<button class="usa-button--outline action-small" onclick="copyCountyLink(\''+safe+'\')" aria-label="Copy link '+escapeHtml(c)+'">📋</button>'+
+      '</div></div>';
   }).join('');
   document.getElementById('county-list').innerHTML=html;
 }
