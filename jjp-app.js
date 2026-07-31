@@ -399,18 +399,66 @@ function textCounty(county){
 }
 
 function printCounty(county){
-  var items = getCountyResources(county);
+  // Print resources + nursing homes + care homes for the county
+  var resources = getCountyResources(county);
+  var nHomes = DATA.nursing_homes.filter(function(n){ return n.county === county; });
+  var cHomes = DATA.care_homes.filter(function(c){ return c.county === county; });
+
   var w = window.open('','_blank');
   var html = '<!doctype html><html><head><meta charset="utf-8"><title>Print: '+escapeHtml(county)+'</title>'+
-    '<style>body{font-family:Arial,Helvetica,sans-serif;padding:20px;color:#000} h1{font-size:22px} table{width:100%;border-collapse:collapse} td,th{padding:8px;border:1px solid #ccc;text-align:left}</style></head><body>';
-  html += '<h1>Resources in '+escapeHtml(county)+'</h1>';
-  html += '<table><thead><tr><th>Name</th><th>Phone</th><th>Address</th></tr></thead><tbody>';
-  items.forEach(function(i){ html += '<tr><td>'+escapeHtml(i.name||'')+'</td><td>'+escapeHtml(i.phone||'')+'</td><td>'+escapeHtml(i.address||'')+'</td></tr>'; });
-  html += '</tbody></table>';
-  html += '<p>Source: '+escapeHtml(countyUrl(county))+'</p>';
+    '<style>body{font-family:Arial,Helvetica,sans-serif;padding:20px;color:#000} h1{font-size:22px;margin-bottom:6px} h2{font-size:18px;margin-top:18px} table{width:100%;border-collapse:collapse;margin-top:8px} td,th{padding:8px;border:1px solid #ccc;text-align:left} .meta{font-size:13px;color:#333;margin-top:10px}</style></head><body>';
+  html += '<h1>Directory for '+escapeHtml(county)+'</h1>';
+  html += '<p class="meta">This printout contains resources, nursing homes, and care homes for '+escapeHtml(county)+'.</p>';
+
+  if(resources.length){
+    html += '<h2>Resources ('+resources.length+')</h2>';
+    html += '<table><thead><tr><th>Name</th><th>Phone</th><th>Address</th><th>Notes</th></tr></thead><tbody>';
+    resources.forEach(function(i){ html += '<tr><td>'+escapeHtml(i.name||'')+'</td><td>'+escapeHtml(i.phone||'')+'</td><td>'+escapeHtml(i.address||'')+'</td><td>'+escapeHtml(i.notes||'')+'</td></tr>'; });
+    html += '</tbody></table>';
+  }
+
+  if(nHomes.length){
+    html += '<h2>Nursing Homes ('+nHomes.length+')</h2>';
+    html += '<table><thead><tr><th>Name</th><th>Phone</th><th>Address</th><th>Notes</th></tr></thead><tbody>';
+    nHomes.forEach(function(n){ html += '<tr><td>'+escapeHtml(n.name||'')+'</td><td>'+escapeHtml(n.phone||'')+'</td><td>'+escapeHtml(n.address||'')+'</td><td>'+(n.va_contract? 'VA Contract' : '')+'</td></tr>'; });
+    html += '</tbody></table>';
+  }
+
+  if(cHomes.length){
+    html += '<h2>Care Homes ('+cHomes.length+')</h2>';
+    html += '<table><thead><tr><th>Name</th><th>Phone</th><th>Address</th><th>Type</th></tr></thead><tbody>';
+    cHomes.forEach(function(c){ html += '<tr><td>'+escapeHtml(c.name||'')+'</td><td>'+escapeHtml(c.phone||'')+'</td><td>'+escapeHtml(c.address||'')+'</td><td>'+escapeHtml(c.facility_type||'')+'</td></tr>'; });
+    html += '</tbody></table>';
+  }
+
+  html += '<p class="meta">Source: '+escapeHtml(countyUrl(county))+'</p>';
   html += '</body></html>';
   w.document.write(html); w.document.close(); w.focus(); setTimeout(function(){ w.print(); }, 500);
 }
+
+// Toolbar helper: populate top select and provide toolbar actions
+function buildCountyToolbar(){
+  var counties={};
+  DATA.resources.forEach(function(r){ if(r.county){counties[r.county]=(counties[r.county]||0)+1;} });
+  var sorted=Object.keys(counties).sort();
+  var sel = document.getElementById('county-top-select');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">-- Choose a county --</option>' + sorted.map(function(c){ return '<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>'; }).join('');
+  // enable/disable toolbar based on selection
+  onCountyToolbarChange();
+}
+
+function onCountyToolbarChange(){
+  var sel = document.getElementById('county-top-select');
+  var val = sel && sel.value ? sel.value : '';
+  var ids = ['county-share-btn','county-text-btn','county-print-btn','county-copy-btn'];
+  ids.forEach(function(id){ var b = document.getElementById(id); if(b) b.disabled = !val; });
+}
+
+function shareCountyFromToolbar(){ var sel=document.getElementById('county-top-select'); if(sel && sel.value) shareCounty(sel.value); }
+function copyCountyLinkFromToolbar(){ var sel=document.getElementById('county-top-select'); if(sel && sel.value) copyCountyLink(sel.value); }
+function textCountyFromToolbar(){ var sel=document.getElementById('county-top-select'); if(sel && sel.value) textCounty(sel.value); }
+function printCountyFromToolbar(){ var sel=document.getElementById('county-top-select'); if(sel && sel.value) printCounty(sel.value); }
 
 function renderCounties(){
   var counties={};
@@ -434,6 +482,8 @@ function renderCounties(){
       '</div></div>';
   }).join('');
   document.getElementById('county-list').innerHTML=html;
+  // refresh top toolbar select
+  buildCountyToolbar();
 }
 
 function filterByCounty(county){

@@ -228,6 +228,19 @@ body{background:linear-gradient(180deg,var(--cn-navy),#0b3350 80%);color:var(--c
   <!-- COUNTIES -->
   <div id="tab-counties" class="jjp-section">
     <h2 class="font-heading-lg">📍 Counties Served</h2>
+    <!-- County toolbar: select + actions -->
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <label for="county-top-select" class="usa-hint" style="margin-right:6px">Select county:</label>
+      <select id="county-top-select" class="usa-select" aria-label="Select county to act on" onchange="onCountyToolbarChange()">
+        <option value="">-- Choose a county --</option>
+      </select>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button id="county-share-btn" class="usa-button--outline action-small" onclick="shareCountyFromToolbar()" aria-label="Share selected county" disabled>🔗 Share</button>
+        <button id="county-text-btn" class="usa-button--outline action-small" onclick="textCountyFromToolbar()" aria-label="Text selected county" disabled>✉️ Text</button>
+        <button id="county-print-btn" class="usa-button action-small" onclick="printCountyFromToolbar()" aria-label="Print selected county" disabled>🖨️ Print</button>
+        <button id="county-copy-btn" class="usa-button--outline action-small" onclick="copyCountyLinkFromToolbar()" aria-label="Copy link for selected county" disabled>📋 Copy</button>
+      </div>
+    </div>
     <div id="county-list"></div>
   </div>
 </main>
