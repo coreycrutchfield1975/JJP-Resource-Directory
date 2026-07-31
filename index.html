@@ -7,23 +7,24 @@
 <link rel="stylesheet" href="uswds/package/dist/css/uswds.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-/* ── JJP — Dark Crystal over USWDS ── */
+/* ── JJP — Lighter VA-friendly palette over USWDS ── */
 :root{
-  --cn-navy:#0a1628;
-  --cn-navy2:#0f2240;
+  /* Slightly lighter, more neutral base while keeping high contrast */
+  --cn-navy:#0f2740; /* lighter than before */
+  --cn-navy2:#143a5a;
   --cn-gold:#c9a227;
   --cn-gold2:#e2c96e;
   --cn-cyan:#22d3ee;
-  --cn-surface:rgba(15,34,64,.95); /* slightly less transparent for contrast */
-  --cn-border:rgba(201,162,39,.18);
-  --cn-text:#e6eef8; /* brighter for improved contrast */
-  --cn-muted:#9fb6d0; /* higher-contrast muted text */
+  --cn-surface:rgba(255,255,255,0.03); /* subtle light surface over navy */
+  --cn-border:rgba(201,162,39,.14);
+  --cn-text:#eef6fb; /* bright text for readability */
+  --cn-muted:#b6cfe6; /* accessible muted */
 }
 html{font-size:0.95rem;} /* minimum base font size for readability */
-body{background:var(--cn-navy);color:var(--cn-text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial}
+body{background:linear-gradient(180deg,var(--cn-navy),#0b3350 80%);color:var(--cn-text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial}
 .usa-header{background:var(--cn-navy2);border-bottom:2px solid var(--cn-gold)}
-.usa-header .usa-logo a{color:var(--cn-gold2);font-weight:700;text-shadow:0 0 12px rgba(201,162,39,.3)}
-.jjp-nav{background:var(--cn-surface);backdrop-filter:blur(8px);border-bottom:1px solid var(--cn-border)}
+.usa-header .usa-logo a{color:var(--cn-gold2);font-weight:700}
+.jjp-nav{background:rgba(255,255,255,0.02);backdrop-filter:blur(6px);border-bottom:1px solid rgba(255,255,255,0.03)}
 .jjp-nav .usa-nav__link{font-size:0.98rem;padding:.65rem 1rem;color:var(--cn-text)}
 .jjp-nav .usa-nav__link.usa-current{color:var(--cn-gold2);border-bottom:2px solid var(--cn-gold);font-weight:700}
 .jjp-nav .usa-nav__link:hover{color:var(--cn-text)}
@@ -31,58 +32,70 @@ body{background:var(--cn-navy);color:var(--cn-text);font-family:system-ui,-apple
 .jjp-section.active{display:block}
 
 /* Responsive grid for cards */
-.jjp-list{display:grid;grid-gap:.75rem;grid-template-columns:1fr}
+.jjp-list{display:grid;grid-gap:1rem;grid-template-columns:1fr}
 @media (min-width:768px){.jjp-list{grid-template-columns:repeat(2,1fr)}}
 @media (min-width:1024px){.jjp-list{grid-template-columns:repeat(3,1fr)}}
 
 .jjp-card{
-  background:var(--cn-surface);backdrop-filter:blur(10px);
+  background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
   border:1px solid var(--cn-border);border-radius:10px;
-  padding:1rem;min-height:84px;
-  box-shadow:0 4px 20px rgba(0,0,0,.35);
+  padding:1rem;min-height:88px;
+  box-shadow:0 6px 20px rgba(2,6,23,.35);
   color:var(--cn-text);
   display:flex;flex-direction:column;justify-content:space-between;
 }
-.jjp-card:hover{border-color:rgba(201,162,39,.28);box-shadow:0 6px 32px rgba(0,0,0,.45)}
-.jjp-card .type-badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.type-Emergency{background:rgba(220,38,38,.14);color:#7f1d1d}
-.type-Food{background:rgba(22,163,74,.12);color:#064e3b}
-.type-Housing{background:rgba(37,99,235,.12);color:#08306b}
-.type-Veteran{background:rgba(124,58,237,.12);color:#3b0764}
-.type-Community{background:rgba(202,138,4,.12);color:#6b3e00}
-.type-Assistance{background:rgba(194,65,12,.12);color:#6b2a12}
-.type-Transportation{background:rgba(20,184,166,.12);color:#044e3a}
-.type-Legal{background:rgba(190,24,93,.12);color:#4c0736}
-.type-Health{background:rgba(14,116,144,.12);color:#03303a}
-.type-Charity{background:rgba(79,70,229,.12);color:#2a235d}
+.jjp-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.06);box-shadow:0 10px 30px rgba(2,6,23,.5)}
+.jjp-card .type-badge{display:inline-block;padding:6px 10px;border-radius:8px;font-size:.88rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+
+/* Rainbow-friendly accessible palette for badges (soft backgrounds, strong contrast text) */
+.type-Emergency{background:#FFECEC;color:#7f1d1d}
+.type-Food{background:#E6F9EC;color:#0b5a2b}
+.type-Housing{background:#EAF2FF;color:#08306b}
+.type-Veteran{background:#F3E8FF;color:#4c1366}
+.type-Community{background:#FFF4E6;color:#6b3e00}
+.type-Assistance{background:#FFF0EA;color:#7a2b16}
+.type-Transportation{background:#E8FCF9;color:#0b5a4a}
+.type-Legal{background:#FFF0F6;color:#5b0f3a}
+.type-Health{background:#EAF7FF;color:#03303a}
+.type-Charity{background:#F0F3FF;color:#1e276a}
+
 #map{height:450px;border-radius:8px;border:1px solid var(--cn-border)}
 
 /* County chips are buttons now for accessibility */
-.county-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;margin:6px;border-radius:20px;background:rgba(201,162,39,.08);color:var(--cn-gold2);font-size:.95rem;cursor:pointer;transition:all .12s;border:1px solid rgba(201,162,39,.12);border-style:solid}
-.county-chip:hover{background:rgba(201,162,39,.16);border-color:var(--cn-gold)}
+.county-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;margin:6px;border-radius:20px;background:rgba(255,255,255,.03);color:var(--cn-gold2);font-size:.95rem;cursor:pointer;transition:all .12s;border:1px solid rgba(255,255,255,.04)}
+.county-chip:hover{background:rgba(255,255,255,.06);border-color:var(--cn-gold)}
 .county-chip.active{background:var(--cn-gold);color:var(--cn-navy)}
-.county-chip:focus{outline:3px solid rgba(230,238,248,.12);outline-offset:2px}
+.county-chip:focus{outline:3px solid rgba(226,201,39,.18);outline-offset:2px}
 
 /* USWDS overrides */
-.usa-input,.usa-select,.usa-textarea{background:rgba(10,22,40,.9);border:1px solid rgba(201,162,39,.18);color:var(--cn-text);border-radius:6px;padding:.6rem}
-.usa-input:focus,.usa-select:focus{border-color:var(--cn-gold);box-shadow:0 0 0 3px rgba(201,162,39,.12)}
+.usa-input,.usa-select,.usa-textarea{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:var(--cn-text);border-radius:6px;padding:.6rem}
+.usa-input:focus,.usa-select:focus{border-color:var(--cn-gold);box-shadow:0 0 0 3px rgba(226,201,39,.08)}
 
-/* Larger touch targets for buttons inside cards */
-.jjp-card .usa-button,.jjp-card .usa-button--outline{padding:.6rem 1rem;min-height:44px;font-size:.98rem;border-radius:8px}
+/* Action buttons inside cards */
+.jjp-card .usa-button,.jjp-card .usa-button--outline{padding:.6rem .9rem;min-height:40px;font-size:.95rem;border-radius:8px}
 .usa-button{background:var(--cn-gold);color:var(--cn-navy);font-weight:700;border:none}
-.usa-button:hover{background:var(--cn-gold2);box-shadow:0 4px 16px rgba(201,162,39,.25);color:var(--cn-navy)}
-.usa-button--outline{background:transparent;border:1px solid rgba(201,162,39,.3);color:var(--cn-gold2)}
-.usa-button--outline:hover{background:rgba(201,162,39,.08);border-color:var(--cn-gold);color:var(--cn-gold2)}
+.usa-button--outline{background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--cn-text)}
+.usa-button--outline:hover{background:rgba(255,255,255,.02)}
+
+.action-small{padding:.4rem .6rem;font-size:.88rem;border-radius:6px}
 
 .usa-table{color:var(--cn-text)}
-.usa-table thead th{background:rgba(10,22,40,.7);color:var(--cn-gold2);border-color:var(--cn-border)}
+.usa-table thead th{background:rgba(255,255,255,.02);color:var(--cn-gold2);border-color:var(--cn-border)}
 .usa-table td{border-color:var(--cn-border)}
 .usa-hint{color:var(--cn-muted)}
 
 /* Visible and consistent focus styles for keyboard navigation */
 :focus{outline:3px solid rgba(226,201,39,.18);outline-offset:2px}
 
-@media print{.usa-header,.jjp-nav{display:none!important}.jjp-section{display:block!important}}
+/* Print-friendly styles: simplified layout and readable colors */
+@media print{
+  body{background:white;color:black}
+  .usa-header,.jjp-nav{display:none!important}
+  .jjp-section{display:block!important}
+  .jjp-card{background:white;color:black;border:none;box-shadow:none}
+  .usa-button,.usa-button--outline,.county-chip{display:none}
+  .jjp-list{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>

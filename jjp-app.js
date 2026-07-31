@@ -15,6 +15,85 @@ var STATE = {
   care: {offset: 0}
 };
 
+/* Utility: action buttons and sharing/printing helpers */
+function actionButtonsHTML(item, idx){
+  // buttons: Share, Text, Print, Copy Link
+  var share = '<button type="button" class="usa-button--outline action-small" onclick="shareResource('+idx+')" aria-label="Share resource">🔗 Share</button>';
+  var txt = '<button type="button" class="usa-button--outline action-small" onclick="textResource('+idx+')" aria-label="Text resource">✉️ Text</button>';
+  var pr = '<button type="button" class="usa-button action-small" onclick="printResource('+idx+')" aria-label="Print resource">🖨️ Print</button>';
+  var copy = '<button type="button" class="usa-button--outline action-small" onclick="copyResourceLink('+idx+')" aria-label="Copy resource link">📋 Copy</button>';
+  return share + txt + pr + copy;
+}
+
+function resourceUrlFor(item){
+  // Prefer a link to current page with query params; fallback to location.href
+  try{
+    var url = new URL(window.location.href);
+    if(item && item.name){
+      url.hash = 'resource-'+encodeURIComponent(item.name);
+    }
+    return url.toString();
+  }catch(e){ return window.location.href; }
+}
+
+function shareResource(idx){
+  var item = DATA.resources[idx] || {};
+  var url = resourceUrlFor(item);
+  var title = item.name || 'Resource';
+  var text = (item.name?item.name+" - ":'') + (item.address?item.address+' ':'') + (item.phone?item.phone:'');
+  if(navigator.share){
+    navigator.share({title:title,text:text,url:url}).catch(function(){});
+  } else {
+    // fallback: open mailto
+    var body = encodeURIComponent(text + '\n' + url);
+    window.location.href = 'mailto:?subject='+encodeURIComponent(title)+'&body='+body;
+  }
+}
+
+function copyResourceLink(idx){
+  var item = DATA.resources[idx] || {};
+  var url = resourceUrlFor(item);
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(function(){alert('Link copied to clipboard');});
+  } else {
+    prompt('Copy this link', url);
+  }
+}
+
+function textResource(idx){
+  var item = DATA.resources[idx] || {};
+  var body = encodeURIComponent((item.name?item.name+' - ':'') + (item.address?item.address+' ':'') + (item.phone?item.phone+' ':'') + resourceUrlFor(item));
+  if(item.phone){
+    // use sms: scheme where supported
+    window.location.href = 'sms:'+encodeURIComponent(item.phone)+'?body='+body;
+  } else {
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(decodeURIComponent(body)).then(function(){alert('Text content copied to clipboard for pasting into a messaging app');});
+    } else {
+      prompt('Text content', decodeURIComponent(body));
+    }
+  }
+}
+
+function printResource(idx){
+  var item = DATA.resources[idx] || {};
+  var w = window.open('','_blank');
+  var html = '<!doctype html><html><head><meta charset="utf-8"><title>Print: '+(item.name?escapeHtml(item.name):'Resource')+'</title>'+
+    '<style>body{font-family:Arial,Helvetica,sans-serif;padding:20px;color:#000} h1{font-size:20px} p{font-size:14px}</style></head><body>';
+  html += '<h1>'+(item.name?escapeHtml(item.name):'')+'</h1>';
+  if(item.address) html += '<p>Address: '+escapeHtml(item.address)+'</p>';
+  if(item.city || item.county || item.state) html += '<p>Location: '+escapeHtml([item.city,item.county,item.state].filter(Boolean).join(', '))+'</p>';
+  if(item.phone) html += '<p>Phone: '+escapeHtml(item.phone)+'</p>';
+  if(item.notes) html += '<p>Notes: '+escapeHtml(item.notes)+'</p>';
+  html += '<p>Source: '+escapeHtml(resourceUrlFor(item))+'</p>';
+  html += '</body></html>';
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 500);
+}
+
+
 // ═══ Init ═══
 document.addEventListener('DOMContentLoaded',function(){
   buildCountySelects();
@@ -75,6 +154,7 @@ function renderResources(loadMore){
 
   var cards = pageItems.map(function(r){
     var meta = TYPE_META[r.type]||{};
+    var idx = DATA.resources.indexOf(r);
     return '<div class="jjp-card" tabindex="0">'+
       '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
         '<div><strong>'+(meta.icon||'')+' '+escapeHtml(r.name)+'</strong>'+
@@ -85,6 +165,7 @@ function renderResources(loadMore){
       '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">'+
         (r.phone?('<a href="tel:'+escapeHtml(r.phone)+'" class="usa-button usa-button--outline" aria-label="Call '+escapeHtml(r.name)+'">📞 '+escapeHtml(r.phone)+'</a>'):'')+
         (r.address?('<a href="https://www.google.com/maps/search/'+encodeURIComponent(r.address)+'" target="_blank" rel="noopener noreferrer" class="usa-button usa-button--outline" aria-label="Open map for '+escapeHtml(r.name)+'">🗺️ Map</a>'):'')+
+        actionButtonsHTML(r, idx)+
       '</div>'+
       (r.notes?('<div style="font-size:.87rem;color:var(--cn-muted);margin-top:8px;font-style:italic">'+escapeHtml(r.notes)+'</div>'):'')+
     '</div>';
@@ -123,11 +204,15 @@ function renderHotlines(loadMore){
   if(!total){ document.getElementById('hot-list').innerHTML = html; return; }
 
   var cards = pageItems.map(function(h){
+    var idx = DATA.hotlines.indexOf(h);
     return '<div class="jjp-card" tabindex="0">'+
       '<div><strong>📞 '+escapeHtml(h.name)+'</strong>'+
       (h.category?('<span class="type-badge" style="margin-left:8px;background:#e0e7ff;color:#3730a3">'+escapeHtml(h.category)+'</span>'):'')+'</div>'+
       (h.notes?('<div style="font-size:.9rem;color:var(--cn-muted);margin-top:6px">'+escapeHtml(h.notes)+'</div>'):'')+
-      '<div style="margin-top:8px"><a href="tel:'+escapeHtml(h.phone)+'" class="usa-button" aria-label="Call '+escapeHtml(h.name)+'">📞 '+escapeHtml(h.phone)+'</a></div>'+
+      '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">'+
+        (h.phone?('<a href="tel:'+escapeHtml(h.phone)+'" class="usa-button" aria-label="Call '+escapeHtml(h.name)+'">📞 '+escapeHtml(h.phone)+'</a>'):'')+
+        actionButtonsHTML(h, idx)+
+      '</div>'+
     '</div>';
   }).join('');
 
@@ -164,6 +249,7 @@ function renderNursingHomes(loadMore){
   if(!total){ document.getElementById('nh-list').innerHTML = html; return; }
 
   var cards = pageItems.map(function(n){
+    var idx = DATA.nursing_homes.indexOf(n);
     return '<div class="jjp-card" tabindex="0">'+
       '<strong>🏥 '+escapeHtml(n.name)+'</strong>'+
       '<div style="font-size:.92rem;color:var(--cn-muted);margin-top:6px">'+escapeHtml([n.city,n.county,n.state].filter(Boolean).join(', '))+'</div>'+
@@ -173,6 +259,7 @@ function renderNursingHomes(loadMore){
         (n.fax?('<span style="font-size:.9rem;color:var(--cn-muted)">📠 '+escapeHtml(n.fax)+'</span>'):'')+
         (n.va_contract?('<span class="type-badge" style="background:#dcfce7;color:#166534">VA Contract</span>'):'')+
         (n.behavioral_unit?('<span class="type-badge" style="background:#ede9fe;color:#5b21b6">Behavioral Unit</span>'):'')+
+        actionButtonsHTML(n, idx)+
       '</div>'+
     '</div>';
   }).join('');
@@ -211,6 +298,7 @@ function renderCareHomes(loadMore){
   if(!total){ document.getElementById('ch-list').innerHTML = html; return; }
 
   var cards = pageItems.map(function(c){
+    var idx = DATA.care_homes.indexOf(c);
     return '<div class="jjp-card" tabindex="0">'+
       '<strong>🏠 '+escapeHtml(c.name)+'</strong>'+
       '<span class="type-badge" style="margin-left:8px;background:#fef3c7;color:#92400e">'+escapeHtml((typeLabels[c.facility_type]||c.facility_type))+'</span>'+
@@ -218,6 +306,7 @@ function renderCareHomes(loadMore){
       (c.address?('<div style="font-size:.92rem;color:var(--cn-muted);margin-top:6px">📍 '+escapeHtml(c.address)+'</div>'):'')+
       '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">'+
         (c.phone?('<a href="tel:'+escapeHtml(c.phone)+'" class="usa-button usa-button--outline" aria-label="Call '+escapeHtml(c.name)+'">📞 '+escapeHtml(c.phone)+'</a>'):'')+
+        actionButtonsHTML(c, idx)+
       '</div>'+
     '</div>';
   }).join('');
