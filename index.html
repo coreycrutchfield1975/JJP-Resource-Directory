@@ -14,62 +14,74 @@
   --cn-gold:#c9a227;
   --cn-gold2:#e2c96e;
   --cn-cyan:#22d3ee;
-  --cn-surface:rgba(15,34,64,.85);
-  --cn-border:rgba(201,162,39,.15);
-  --cn-text:#d0e0f5;
-  --cn-muted:#5a7a9a;
+  --cn-surface:rgba(15,34,64,.95); /* slightly less transparent for contrast */
+  --cn-border:rgba(201,162,39,.18);
+  --cn-text:#e6eef8; /* brighter for improved contrast */
+  --cn-muted:#9fb6d0; /* higher-contrast muted text */
 }
-body{background:var(--cn-navy);color:var(--cn-text)}
+html{font-size:0.95rem;} /* minimum base font size for readability */
+body{background:var(--cn-navy);color:var(--cn-text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial}
 .usa-header{background:var(--cn-navy2);border-bottom:2px solid var(--cn-gold)}
 .usa-header .usa-logo a{color:var(--cn-gold2);font-weight:700;text-shadow:0 0 12px rgba(201,162,39,.3)}
-.jjp-nav{background:var(--cn-surface);backdrop-filter:blur(12px);border-bottom:1px solid var(--cn-border)}
-.jjp-nav .usa-nav__link{font-size:.85rem;padding:.6rem 1rem;color:var(--cn-muted)}
+.jjp-nav{background:var(--cn-surface);backdrop-filter:blur(8px);border-bottom:1px solid var(--cn-border)}
+.jjp-nav .usa-nav__link{font-size:0.98rem;padding:.65rem 1rem;color:var(--cn-text)}
 .jjp-nav .usa-nav__link.usa-current{color:var(--cn-gold2);border-bottom:2px solid var(--cn-gold);font-weight:700}
 .jjp-nav .usa-nav__link:hover{color:var(--cn-text)}
 .jjp-section{display:none}
 .jjp-section.active{display:block}
+
+/* Responsive grid for cards */
+.jjp-list{display:grid;grid-gap:.75rem;grid-template-columns:1fr}
+@media (min-width:768px){.jjp-list{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1024px){.jjp-list{grid-template-columns:repeat(3,1fr)}}
+
 .jjp-card{
-  background:var(--cn-surface);backdrop-filter:blur(16px);
-  border:1px solid var(--cn-border);border-radius:8px;
-  padding:1rem;margin-bottom:.75rem;
-  box-shadow:0 4px 24px rgba(0,0,0,.3),0 0 0 1px rgba(201,162,39,.05);
+  background:var(--cn-surface);backdrop-filter:blur(10px);
+  border:1px solid var(--cn-border);border-radius:10px;
+  padding:1rem;min-height:84px;
+  box-shadow:0 4px 20px rgba(0,0,0,.35);
   color:var(--cn-text);
+  display:flex;flex-direction:column;justify-content:space-between;
 }
-.jjp-card:hover{border-color:rgba(201,162,39,.25);box-shadow:0 4px 32px rgba(0,0,0,.4),0 0 0 1px rgba(201,162,39,.1)}
-.jjp-card .type-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.type-Emergency{background:rgba(220,38,38,.15);color:#fca5a5}
-.type-Food{background:rgba(22,163,74,.15);color:#86efac}
-.type-Housing{background:rgba(37,99,235,.15);color:#93c5fd}
-.type-Veteran{background:rgba(124,58,237,.15);color:#c4b5fd}
-.type-Community{background:rgba(202,138,4,.15);color:#fde68a}
-.type-Assistance{background:rgba(194,65,12,.15);color:#fdba74}
-.type-Transportation{background:rgba(20,184,166,.15);color:#5eead4}
-.type-Legal{background:rgba(190,24,93,.15);color:#f9a8d4}
-.type-Health{background:rgba(14,116,144,.15);color:#67e8f9}
-.type-Charity{background:rgba(79,70,229,.15);color:#a5b4fc}
+.jjp-card:hover{border-color:rgba(201,162,39,.28);box-shadow:0 6px 32px rgba(0,0,0,.45)}
+.jjp-card .type-badge{display:inline-block;padding:4px 10px;border-radius:6px;font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.type-Emergency{background:rgba(220,38,38,.14);color:#7f1d1d}
+.type-Food{background:rgba(22,163,74,.12);color:#064e3b}
+.type-Housing{background:rgba(37,99,235,.12);color:#08306b}
+.type-Veteran{background:rgba(124,58,237,.12);color:#3b0764}
+.type-Community{background:rgba(202,138,4,.12);color:#6b3e00}
+.type-Assistance{background:rgba(194,65,12,.12);color:#6b2a12}
+.type-Transportation{background:rgba(20,184,166,.12);color:#044e3a}
+.type-Legal{background:rgba(190,24,93,.12);color:#4c0736}
+.type-Health{background:rgba(14,116,144,.12);color:#03303a}
+.type-Charity{background:rgba(79,70,229,.12);color:#2a235d}
 #map{height:450px;border-radius:8px;border:1px solid var(--cn-border)}
-.county-chip{
-  display:inline-block;padding:4px 10px;margin:3px;border-radius:20px;
-  background:rgba(201,162,39,.1);color:var(--cn-gold2);font-size:.8rem;
-  cursor:pointer;transition:all .15s;border:1px solid rgba(201,162,39,.15);
-}
-.county-chip:hover{background:rgba(201,162,39,.2);border-color:var(--cn-gold)}
+
+/* County chips are buttons now for accessibility */
+.county-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;margin:6px;border-radius:20px;background:rgba(201,162,39,.08);color:var(--cn-gold2);font-size:.95rem;cursor:pointer;transition:all .12s;border:1px solid rgba(201,162,39,.12);border-style:solid}
+.county-chip:hover{background:rgba(201,162,39,.16);border-color:var(--cn-gold)}
 .county-chip.active{background:var(--cn-gold);color:var(--cn-navy)}
+.county-chip:focus{outline:3px solid rgba(230,238,248,.12);outline-offset:2px}
 
 /* USWDS overrides */
-.usa-input,.usa-select,.usa-textarea{
-  background:rgba(10,22,40,.8);border:1px solid rgba(201,162,39,.2);
-  color:var(--cn-text);border-radius:6px;
-}
-.usa-input:focus,.usa-select:focus{border-color:var(--cn-gold);box-shadow:0 0 0 3px rgba(201,162,39,.1)}
-.usa-button{background:var(--cn-gold);color:var(--cn-navy);font-weight:700;border:none;border-radius:6px}
+.usa-input,.usa-select,.usa-textarea{background:rgba(10,22,40,.9);border:1px solid rgba(201,162,39,.18);color:var(--cn-text);border-radius:6px;padding:.6rem}
+.usa-input:focus,.usa-select:focus{border-color:var(--cn-gold);box-shadow:0 0 0 3px rgba(201,162,39,.12)}
+
+/* Larger touch targets for buttons inside cards */
+.jjp-card .usa-button,.jjp-card .usa-button--outline{padding:.6rem 1rem;min-height:44px;font-size:.98rem;border-radius:8px}
+.usa-button{background:var(--cn-gold);color:var(--cn-navy);font-weight:700;border:none}
 .usa-button:hover{background:var(--cn-gold2);box-shadow:0 4px 16px rgba(201,162,39,.25);color:var(--cn-navy)}
 .usa-button--outline{background:transparent;border:1px solid rgba(201,162,39,.3);color:var(--cn-gold2)}
-.usa-button--outline:hover{background:rgba(201,162,39,.1);border-color:var(--cn-gold);color:var(--cn-gold2)}
+.usa-button--outline:hover{background:rgba(201,162,39,.08);border-color:var(--cn-gold);color:var(--cn-gold2)}
+
 .usa-table{color:var(--cn-text)}
-.usa-table thead th{background:rgba(10,22,40,.6);color:var(--cn-gold2);border-color:var(--cn-border)}
+.usa-table thead th{background:rgba(10,22,40,.7);color:var(--cn-gold2);border-color:var(--cn-border)}
 .usa-table td{border-color:var(--cn-border)}
 .usa-hint{color:var(--cn-muted)}
+
+/* Visible and consistent focus styles for keyboard navigation */
+:focus{outline:3px solid rgba(226,201,39,.18);outline-offset:2px}
+
 @media print{.usa-header,.jjp-nav{display:none!important}.jjp-section{display:block!important}}
 </style>
 </head>
@@ -198,5 +210,17 @@ body{background:var(--cn-navy);color:var(--cn-text)}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="jjp-data.js"></script>
 <script src="jjp-app.js"></script>
+<script>
+// Improve keyboard activation: Enter on a focused card activates the first actionable link inside it
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Enter' && document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('jjp-card')){
+    var link = document.activeElement.querySelector('a');
+    if(link){
+      try{ link.focus(); link.click(); }catch(err){ link.focus(); }
+      e.preventDefault();
+    }
+  }
+});
+</script>
 </body>
 </html>
