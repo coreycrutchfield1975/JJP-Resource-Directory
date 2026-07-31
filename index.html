@@ -7,77 +7,85 @@
 <link rel="stylesheet" href="uswds/package/dist/css/uswds.min.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-/* ── JJP — Dark Crystal over USWDS ── */
+/* ── JJP — Rainbow over USWDS ── */
 :root{
-  --cn-navy:#0a1628;
-  --cn-navy2:#0f2240;
+  --cn-navy:#0f2240;
+  --cn-navy2:#17365d;
   --cn-gold:#c9a227;
-  --cn-gold2:#e2c96e;
+  --cn-gold2:#f6c344;
   --cn-cyan:#22d3ee;
-  --cn-surface:rgba(15,34,64,.85);
-  --cn-border:rgba(201,162,39,.15);
-  --cn-text:#d0e0f5;
-  --cn-muted:#5a7a9a;
+  --cn-purple:#7c4dff;
+  --cn-teal:#14b8a6;
+  --cn-green:#2e9d50;
+  --cn-red:#e53e3e;
+  --cn-orange:#ef7d23;
+  --cn-pink:#d7559b;
+  --bg:#f0f4f8;
+  --surface:#ffffff;
+  --border:#d9e1ea;
+  --text:#18212b;
+  --muted:#5a6c80;
 }
-body{background:var(--cn-navy);color:var(--cn-text)}
-.usa-header{background:var(--cn-navy2);border-bottom:2px solid var(--cn-gold)}
-.usa-header .usa-logo a{color:var(--cn-gold2);font-weight:700;text-shadow:0 0 12px rgba(201,162,39,.3)}
-.jjp-nav{background:var(--cn-surface);backdrop-filter:blur(12px);border-bottom:1px solid var(--cn-border)}
-.jjp-nav .usa-nav__link{font-size:.85rem;padding:.6rem 1rem;color:var(--cn-muted)}
-.jjp-nav .usa-nav__link.usa-current{color:var(--cn-gold2);border-bottom:2px solid var(--cn-gold);font-weight:700}
-.jjp-nav .usa-nav__link:hover{color:var(--cn-text)}
+body{background:var(--bg);color:var(--text)}
+/* Rainbow header */
+.usa-header{background:linear-gradient(100deg,var(--cn-navy2),#1f6feb,var(--cn-purple),var(--cn-pink));border-bottom:4px solid var(--cn-gold2)}
+.usa-header .usa-logo a{color:#fff;font-weight:700;text-shadow:0 0 12px rgba(255,255,255,.2)}
+.jjp-nav{background:var(--surface);border-bottom:1px solid var(--border)}
+.jjp-nav .usa-nav__link{font-size:.85rem;padding:.6rem 1rem;color:var(--muted);font-weight:600}
+.jjp-nav .usa-nav__link.usa-current{color:var(--cn-navy2);border-bottom:3px solid var(--cn-gold);font-weight:700}
+.jjp-nav .usa-nav__link:hover{color:var(--cn-purple)}
 .jjp-section{display:none}
 .jjp-section.active{display:block}
 .jjp-card{
-  background:var(--cn-surface);backdrop-filter:blur(16px);
-  border:1px solid var(--cn-border);border-radius:8px;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
   padding:1rem;margin-bottom:.75rem;
-  box-shadow:0 4px 24px rgba(0,0,0,.3),0 0 0 1px rgba(201,162,39,.05);
-  color:var(--cn-text);
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+  color:var(--text);
 }
-.jjp-card:hover{border-color:rgba(201,162,39,.25);box-shadow:0 4px 32px rgba(0,0,0,.4),0 0 0 1px rgba(201,162,39,.1)}
+.jjp-card:hover{border-color:var(--cn-gold2);box-shadow:0 4px 16px rgba(201,162,39,.15)}
 .jjp-card .type-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.type-Emergency{background:rgba(220,38,38,.15);color:#fca5a5}
-.type-Food{background:rgba(22,163,74,.15);color:#86efac}
-.type-Housing{background:rgba(37,99,235,.15);color:#93c5fd}
-.type-Veteran{background:rgba(124,58,237,.15);color:#c4b5fd}
-.type-Community{background:rgba(202,138,4,.15);color:#fde68a}
-.type-Assistance{background:rgba(194,65,12,.15);color:#fdba74}
-.type-Transportation{background:rgba(20,184,166,.15);color:#5eead4}
-.type-Legal{background:rgba(190,24,93,.15);color:#f9a8d4}
-.type-Health{background:rgba(14,116,144,.15);color:#67e8f9}
-.type-Charity{background:rgba(79,70,229,.15);color:#a5b4fc}
-#map{height:450px;border-radius:8px;border:1px solid var(--cn-border)}
+.type-Emergency{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.type-Food{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.type-Housing{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe}
+.type-Veteran{background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe}
+.type-Community{background:#fefce8;color:#ca8a04;border:1px solid #fef08a}
+.type-Assistance{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+.type-Transportation{background:#f0fdfa;color:#0f766e;border:1px solid #99f6e4}
+.type-Legal{background:#fdf2f8;color:#be185d;border:1px solid #fbcfe8}
+.type-Health{background:#ecfeff;color:#0e7490;border:1px solid #a5f3fc}
+.type-Charity{background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe}
+#map{height:450px;border-radius:8px;border:1px solid var(--border)}
 .county-chip{
   display:inline-block;padding:4px 10px;margin:3px;border-radius:20px;
-  background:rgba(201,162,39,.1);color:var(--cn-gold2);font-size:.8rem;
-  cursor:pointer;transition:all .15s;border:1px solid rgba(201,162,39,.15);
+  background:var(--surface);color:var(--cn-navy2);font-size:.8rem;
+  cursor:pointer;transition:all .15s;border:2px solid var(--border);font-weight:600;
 }
-.county-chip:hover{background:rgba(201,162,39,.2);border-color:var(--cn-gold)}
-.county-chip.active{background:var(--cn-gold);color:var(--cn-navy)}
+.county-chip:hover{background:var(--cn-gold2);border-color:var(--cn-gold);color:var(--cn-navy2)}
+.county-chip.active{background:var(--cn-gold);color:var(--cn-navy2);border-color:var(--cn-gold)}
 
-/* USWDS overrides */
+/* Inputs — light */
 .usa-input,.usa-select,.usa-textarea{
-  background:rgba(10,22,40,.8);border:1px solid rgba(201,162,39,.2);
-  color:var(--cn-text);border-radius:6px;
+  background:var(--surface);border:2px solid var(--border);
+  color:var(--text);border-radius:8px;
 }
-.usa-input:focus,.usa-select:focus{border-color:var(--cn-gold);box-shadow:0 0 0 3px rgba(201,162,39,.1)}
-.usa-button{background:var(--cn-gold);color:var(--cn-navy);font-weight:700;border:none;border-radius:6px}
-.usa-button:hover{background:var(--cn-gold2);box-shadow:0 4px 16px rgba(201,162,39,.25);color:var(--cn-navy)}
-.usa-button--outline{background:transparent;border:1px solid rgba(201,162,39,.3);color:var(--cn-gold2)}
-.usa-button--outline:hover{background:rgba(201,162,39,.1);border-color:var(--cn-gold);color:var(--cn-gold2)}
-.usa-table{color:var(--cn-text)}
-.usa-table thead th{background:rgba(10,22,40,.6);color:var(--cn-gold2);border-color:var(--cn-border)}
-.usa-table td{border-color:var(--cn-border)}
-.usa-hint{color:var(--cn-muted)}
+.usa-input:focus,.usa-select:focus{border-color:var(--cn-gold);box-shadow:0 0 0 3px rgba(201,162,39,.15)}
+.usa-button{background:var(--cn-navy2);color:#fff;font-weight:700;border:none;border-radius:8px}
+.usa-button:hover{background:var(--cn-purple);box-shadow:0 4px 16px rgba(124,77,255,.25);color:#fff}
+.usa-button--outline{background:transparent;border:2px solid var(--border);color:var(--cn-navy2);font-weight:600}
+.usa-button--outline:hover{background:var(--cn-navy2);border-color:var(--cn-navy2);color:#fff}
+.usa-table{color:var(--text)}
+.usa-table thead th{background:var(--cn-navy2);color:#fff;border-color:var(--cn-navy2)}
+.usa-table td{border-color:var(--border)}
+.usa-table tbody tr:nth-child(even){background:rgba(15,34,64,.03)}
+.usa-hint{color:var(--muted)}
 @media print{.usa-header,.jjp-nav{display:none!important}.jjp-section{display:block!important}}
 /* Card action menu */
 .card-menu{position:relative;display:inline-block}
-.card-menu-btn{background:transparent;border:1px solid rgba(201,162,39,.2);color:var(--cn-gold2);cursor:pointer;font-size:1.1rem;padding:2px 8px;border-radius:4px;line-height:1}
-.card-menu-btn:hover{background:rgba(201,162,39,.15);border-color:var(--cn-gold)}
-.card-menu-dropdown{display:none;position:absolute;right:0;top:100%;background:var(--cn-navy2);border:1px solid var(--cn-border);border-radius:6px;min-width:140px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4);padding:4px 0}
-.card-menu-dropdown button{display:block;width:100%;text-align:left;background:transparent;border:none;color:var(--cn-text);padding:8px 14px;font-size:.8rem;cursor:pointer}
-.card-menu-dropdown button:hover{background:rgba(201,162,39,.1);color:var(--cn-gold2)}
+.card-menu-btn{background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:1.1rem;padding:2px 8px;border-radius:4px;line-height:1}
+.card-menu-btn:hover{background:var(--cn-navy2);color:#fff;border-color:var(--cn-navy2)}
+.card-menu-dropdown{display:none;position:absolute;right:0;top:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;min-width:150px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:4px 0}
+.card-menu-dropdown a,.card-menu-dropdown button{display:block;width:100%;text-align:left;background:transparent;border:none;color:var(--text);padding:8px 14px;font-size:.8rem;cursor:pointer;text-decoration:none}
+.card-menu-dropdown a:hover,.card-menu-dropdown button:hover{background:var(--cn-navy2);color:#fff}
 </style>
 </head>
 <body>
