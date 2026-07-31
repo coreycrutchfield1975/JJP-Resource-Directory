@@ -160,7 +160,10 @@ function toggleActionMenu(id, closeOnly){
   menu.setAttribute('aria-hidden','false');
   menu.setAttribute('data-open','true');
   if(btn) btn.setAttribute('aria-expanded','true');
-  var first = menu.querySelector('[role="menuitem"]'); if(first) first.focus();
+  var first = menu.querySelector('[role="menuitem"]');
+  if(first){
+    try{ first.focus({preventScroll:true}); }catch(e){ try{ first.focus(); }catch(e){} }
+  }
 }
 
 // Close action menus when clicking outside, and support Escape key
