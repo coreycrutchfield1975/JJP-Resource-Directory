@@ -487,8 +487,10 @@ function initMap(){
   mapInitialized=true;
   // Load Leaflet assets on demand to avoid blocking initial render
   if(typeof L === 'undefined'){
-    loadCss('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
-    loadScript('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', function(){
+    // For government deployments that disallow external CDNs, Leaflet assets should be vendored into 'vendor/leaflet/'.
+    // Place leaflet.css and leaflet.js in vendor/leaflet/ and the app will load them locally.
+    loadCss('vendor/leaflet/leaflet.css');
+    loadScript('vendor/leaflet/leaflet.js', function(){
       try{ _initLeaflet(); } catch(e){ console.error('Leaflet init failed',e); }
     });
   } else {

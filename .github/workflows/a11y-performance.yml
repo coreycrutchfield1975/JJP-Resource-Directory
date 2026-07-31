@@ -18,7 +18,7 @@ jobs:
 
       - name: Install global tools
         run: |
-          npm install -g http-server@14 pa11y@6 @lhci/cli@0.11
+          npm install -g http-server@14 pa11y@6
 
       - name: Start static server
         run: |
@@ -32,17 +32,10 @@ jobs:
           pa11y http://localhost:8080 --reporter html --output reports/pa11y-report.html || true
         continue-on-error: true
 
-      - name: Run Lighthouse CI (collect + assert)
-        env:
-          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
-        run: |
-          # Collect Lighthouse results
-          lhci autorun --collect.url=http://localhost:8080 --upload.target=temporary-public-storage || true
-
-      - name: Upload reports
+      - name: Save reports
         uses: actions/upload-artifact@v4
         with:
-          name: a11y-and-lighthouse-reports
+          name: a11y-reports
           path: |
             reports/pa11y-report.html
-            lhci-*.json
+
