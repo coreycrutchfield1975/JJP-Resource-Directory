@@ -1,6 +1,9 @@
 /* JJP Resource Directory — Static App Logic */
 
-var DATA = JJP_DATA || {resources:[],hotlines:[],nursing_homes:[],care_homes:[]};
+var RAW_DATA = window.JJP_DATA || {resources:[],hotlines:[],nursing_homes:[],care_homes:[]};
+// DATA will be populated incrementally to avoid blocking render for very large datasets
+var DATA = {resources:[],hotlines:[],nursing_homes:[],care_homes:[]};
+var CHUNK_SIZE = 500; // items to load initially and per background step
 var TYPE_META = {
   Emergency:{icon:'🚨'},Food:{icon:'🍎'},Housing:{icon:'🏠'},Veteran:{icon:'🎖️'},
   Community:{icon:'🤝'},Assistance:{icon:'💼'},Transportation:{icon:'🚌'},
@@ -125,6 +128,9 @@ document.addEventListener('keydown', function(e){ if(e.key === 'Escape') toggleA
 
 // ═══ Init ═══
 document.addEventListener('DOMContentLoaded',function(){
+  // Initialize data loading with background chunking for large datasets
+  initDataLoading();
+  // Build UI based on currently-loaded DATA (initial chunk)
   buildCountySelects();
   renderResources();
   renderHotlines();
@@ -132,6 +138,53 @@ document.addEventListener('DOMContentLoaded',function(){
   renderNursingHomes();
   renderCareHomes();
 });
+
+// Initialize progressive/background loading of RAW_DATA into DATA
+function initDataLoading(){
+  try{
+    // Load initial slice for immediate UI responsiveness
+    var r = RAW_DATA.resources || [];
+    if(r.length > CHUNK_SIZE){
+      DATA.resources = r.slice(0, CHUNK_SIZE);
+      // keep pending items to append in background
+      DATA._pending = {
+        resources: r.slice(CHUNK_SIZE),
+        hotlines: RAW_DATA.hotlines || [],
+        nursing_homes: RAW_DATA.nursing_homes || [],
+        care_homes: RAW_DATA.care_homes || []
+      };
+      announce('Loaded first '+DATA.resources.length+' resources. Loading remaining items in the background.');
+      // background step loader
+      (function step(){
+        var pending = DATA._pending && DATA._pending.resources;
+        if(!pending || pending.length === 0){
+          // move other categories into DATA and finish
+          DATA.hotlines = (DATA.hotlines||[]).concat(DATA._pending.hotlines||[]);
+          DATA.nursing_homes = (DATA.nursing_homes||[]).concat(DATA._pending.nursing_homes||[]);
+          DATA.care_homes = (DATA.care_homes||[]).concat(DATA._pending.care_homes||[]);
+          delete DATA._pending;
+          announce('All data loaded');
+          // optionally re-render to include late-arriving items
+          renderResources(); renderHotlines(); renderNursingHomes(); renderCareHomes(); buildCountySelects(); renderCounties();
+          return;
+        }
+        var chunk = pending.splice(0, CHUNK_SIZE);
+        DATA.resources = DATA.resources.concat(chunk);
+        announce('Loaded '+DATA.resources.length+' resources');
+        // re-render list so user can see newly-added items without blocking
+        renderResources();
+        // schedule next step with a short delay to keep UI responsive
+        setTimeout(step, 250);
+      })();
+    } else {
+      // small dataset — load all at once
+      DATA.resources = r.slice();
+      DATA.hotlines = RAW_DATA.hotlines || [];
+      DATA.nursing_homes = RAW_DATA.nursing_homes || [];
+      DATA.care_homes = RAW_DATA.care_homes || [];
+    }
+  }catch(e){ console.error('Data init failed', e); DATA.resources = RAW_DATA.resources || []; DATA.hotlines = RAW_DATA.hotlines || []; DATA.nursing_homes = RAW_DATA.nursing_homes || []; DATA.care_homes = RAW_DATA.care_homes || []; }
+}
 
 // ═══ Navigation ═══
 function showTab(id,el){
