@@ -95,12 +95,19 @@ body{background:linear-gradient(180deg,var(--cn-bg),#eef6f9 60%);color:var(--cn-
 .action-small{padding:.4rem .6rem;font-size:.88rem;border-radius:6px}
 
 .usa-table{color:var(--cn-text)}
-.usa-table thead th{background:rgba(255,255,255,.02);color:var(--cn-gold2);border-color:var(--cn-border)}
+.usa-table thead th{background:rgba(0,0,0,0.04);color:var(--cn-muted);border-color:var(--cn-border)}
 .usa-table td{border-color:var(--cn-border)}
 .usa-hint{color:var(--cn-muted)}
 
+/* Skip link — visible when focused for keyboard users */
+.skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+.skip-link:focus{position:fixed;left:16px;top:12px;width:auto;height:auto;padding:8px 12px;background:var(--cn-accent);color:#fff;border-radius:6px;z-index:9999}
+
+/* County toolbar sticky so print/share controls remain visible while scrolling */
+.county-toolbar{position:sticky;top:72px;z-index:40;background:transparent;padding:0 0 12px 0}
+
 /* Visible and consistent focus styles for keyboard navigation */
-:focus{outline:3px solid rgba(226,201,39,.18);outline-offset:2px}
+:focus{outline:3px solid rgba(43,155,163,.18);outline-offset:2px}
 
 /* Print-friendly styles: simplified layout and readable colors */
 @media print{
@@ -114,6 +121,7 @@ body{background:linear-gradient(180deg,var(--cn-bg),#eef6f9 60%);color:var(--cn-
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
 
 <!-- HEADER -->
 <header class="usa-header usa-header--basic">
@@ -138,7 +146,7 @@ body{background:linear-gradient(180deg,var(--cn-bg),#eef6f9 60%);color:var(--cn-
   </div>
 </nav>
 
-<main class="usa-section" style="padding-top:1.5rem;max-width:1400px;margin:0 auto">
+<main id="main-content" class="usa-section" style="padding-top:1.5rem;max-width:1400px;margin:0 auto">
 
   <!-- RESOURCES -->
   <div id="tab-resources" class="jjp-section active">
@@ -231,7 +239,7 @@ body{background:linear-gradient(180deg,var(--cn-bg),#eef6f9 60%);color:var(--cn-
   <div id="tab-counties" class="jjp-section">
     <h2 class="font-heading-lg">📍 Counties / Print</h2>
     <!-- County toolbar: select + actions -->
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+    <div class="county-toolbar" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
       <label for="county-top-select" class="usa-hint" style="margin-right:6px">Select county:</label>
       <select id="county-top-select" class="usa-select" aria-label="Select county to act on" onchange="onCountyToolbarChange()">
         <option value="">-- Choose a county --</option>
@@ -244,6 +252,7 @@ body{background:linear-gradient(180deg,var(--cn-bg),#eef6f9 60%);color:var(--cn-
       </div>
     </div>
     <div id="county-list"></div>
+    <div id="aria-announcer" aria-live="polite" aria-atomic="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);"></div>
   </div>
 </main>
 

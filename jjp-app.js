@@ -129,6 +129,15 @@ function buildCountySelects(){
 
 function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 
+// Announce messages to assistive tech. Uses a polite live region.
+function announce(msg){
+  var el = document.getElementById('aria-announcer');
+  if(!el) return;
+  // Clear then set to ensure repeated messages are read
+  el.textContent = '';
+  setTimeout(function(){ el.textContent = msg; }, 100);
+}
+
 // ═══ Resources ═══
 function renderResources(loadMore){
   if(!loadMore) STATE.resources.offset = 0; // reset on new search/filter
@@ -150,7 +159,7 @@ function renderResources(loadMore){
   var pageItems = items.slice(0, end);
 
   var html = '<p class="usa-hint">'+total+' resource(s) found</p>';
-  if(!total){ document.getElementById('res-list').innerHTML = html; return; }
+  if(!total){ document.getElementById('res-list').innerHTML = html; announce('No resources found'); return; }
 
   var cards = pageItems.map(function(r){
     var meta = TYPE_META[r.type]||{};
@@ -182,7 +191,7 @@ function renderResources(loadMore){
     STATE.resources.offset = end;
   }
 
-  document.getElementById('res-list').innerHTML = html;
+  document.getElementById('res-list').innerHTML = html; announce(total + ' resources found');
 }
 
 // ═══ Hotlines ═══
@@ -201,7 +210,7 @@ function renderHotlines(loadMore){
   var pageItems = items.slice(0, end);
 
   var html = '<p class="usa-hint">'+total+' hotline(s)</p>';
-  if(!total){ document.getElementById('hot-list').innerHTML = html; return; }
+  if(!total){ document.getElementById('hot-list').innerHTML = html; announce('No hotlines found'); return; }
 
   var cards = pageItems.map(function(h){
     var idx = DATA.hotlines.indexOf(h);
@@ -225,7 +234,7 @@ function renderHotlines(loadMore){
   } else {
     STATE.hotlines.offset = end;
   }
-  document.getElementById('hot-list').innerHTML = html;
+  document.getElementById('hot-list').innerHTML = html; announce(total + ' hotlines found');
 }
 
 // ═══ Nursing Homes ═══
@@ -246,7 +255,7 @@ function renderNursingHomes(loadMore){
   var pageItems = items.slice(0, end);
 
   var html = '<p class="usa-hint">'+total+' nursing home(s)</p>';
-  if(!total){ document.getElementById('nh-list').innerHTML = html; return; }
+  if(!total){ document.getElementById('nh-list').innerHTML = html; announce('No nursing homes found'); return; }
 
   var cards = pageItems.map(function(n){
     var idx = DATA.nursing_homes.indexOf(n);
@@ -273,7 +282,7 @@ function renderNursingHomes(loadMore){
   } else {
     STATE.nursing.offset = end;
   }
-  document.getElementById('nh-list').innerHTML = html;
+  document.getElementById('nh-list').innerHTML = html; announce(total + ' nursing homes found');
 }
 
 // ═══ Care Homes ═══
@@ -295,7 +304,7 @@ function renderCareHomes(loadMore){
 
   var typeLabels={RCF:'Residential Care',ALF:'Assisted Living',ICF:'Intermediate Care'};
   var html = '<p class="usa-hint">'+total+' care home(s)</p>';
-  if(!total){ document.getElementById('ch-list').innerHTML = html; return; }
+  if(!total){ document.getElementById('ch-list').innerHTML = html; announce('No care homes found'); return; }
 
   var cards = pageItems.map(function(c){
     var idx = DATA.care_homes.indexOf(c);
@@ -320,7 +329,7 @@ function renderCareHomes(loadMore){
   } else {
     STATE.care.offset = end;
   }
-  document.getElementById('ch-list').innerHTML = html;
+  document.getElementById('ch-list').innerHTML = html; announce(total + ' care homes found');
 }
 
 // ═══ Map ═══
@@ -446,6 +455,7 @@ function buildCountyToolbar(){
   sel.innerHTML = '<option value="">-- Choose a county --</option>' + sorted.map(function(c){ return '<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>'; }).join('');
   // enable/disable toolbar based on selection
   onCountyToolbarChange();
+  announce('County toolbar updated');
 }
 
 function onCountyToolbarChange(){
@@ -481,7 +491,7 @@ function renderCounties(){
         '<button class="usa-button--outline action-small" onclick="copyCountyLink(\''+safe+'\')" aria-label="Copy link '+escapeHtml(c)+'">📋</button>'+
       '</div></div>';
   }).join('');
-  document.getElementById('county-list').innerHTML=html;
+  document.getElementById('county-list').innerHTML=html; announce(sorted.length + ' counties available');
   // refresh top toolbar select
   buildCountyToolbar();
 }
