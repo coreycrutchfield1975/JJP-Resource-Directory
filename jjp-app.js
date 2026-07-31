@@ -107,18 +107,60 @@ function printResource(idx){
 function toggleActionMenu(id, closeOnly){
   // Close all when called without id
   if(!id){
-    document.querySelectorAll('.action-menu').forEach(function(m){ m.style.display='none'; m.setAttribute('aria-hidden','true'); var btn=document.getElementById(m.id+'-button'); if(btn) btn.setAttribute('aria-expanded','false'); });
+    document.querySelectorAll('.action-menu').forEach(function(m){ m.style.display='none'; m.setAttribute('aria-hidden','true'); m.removeAttribute('data-open'); var btn=document.getElementById(m.id+'-button'); if(btn) btn.setAttribute('aria-expanded','false'); });
     return;
   }
   var menu = document.getElementById(id);
   var btn = document.getElementById(id+'-button');
-  if(!menu) return;
-  if(closeOnly){ menu.style.display='none'; menu.setAttribute('aria-hidden','true'); if(btn) btn.setAttribute('aria-expanded','false'); return; }
-  var isOpen = menu.style.display === 'block';
+  if(!menu || !btn) return;
+  if(closeOnly){ menu.style.display='none'; menu.setAttribute('aria-hidden','true'); menu.removeAttribute('data-open'); if(btn) btn.setAttribute('aria-expanded','false'); return; }
+
   // close others
-  document.querySelectorAll('.action-menu').forEach(function(m){ if(m.id !== id){ m.style.display='none'; m.setAttribute('aria-hidden','true'); var b=document.getElementById(m.id+'-button'); if(b) b.setAttribute('aria-expanded','false'); } });
-  if(isOpen){ menu.style.display='none'; menu.setAttribute('aria-hidden','true'); if(btn) btn.setAttribute('aria-expanded','false'); }
-  else { menu.style.display='block'; menu.setAttribute('aria-hidden','false'); if(btn) btn.setAttribute('aria-expanded','true'); var first = menu.querySelector('[role="menuitem"]'); if(first) first.focus(); }
+  document.querySelectorAll('.action-menu').forEach(function(m){ if(m.id !== id){ m.style.display='none'; m.setAttribute('aria-hidden','true'); m.removeAttribute('data-open'); var b=document.getElementById(m.id+'-button'); if(b) b.setAttribute('aria-expanded','false'); } });
+
+  var isOpen = menu.getAttribute('data-open') === 'true';
+  if(isOpen){
+    menu.style.display='none'; menu.setAttribute('aria-hidden','true'); menu.removeAttribute('data-open'); if(btn) btn.setAttribute('aria-expanded','false');
+    return;
+  }
+
+  // Prepare menu for measurement and positioning
+  menu.style.position = 'fixed';
+  menu.style.display = 'block';
+  menu.style.visibility = 'hidden';
+  menu.style.maxHeight = '50vh';
+
+  var menuRect = menu.getBoundingClientRect();
+  var menuH = menuRect.height || 200;
+  var menuW = menuRect.width || 180;
+  var btnRect = btn.getBoundingClientRect();
+  var spaceBelow = window.innerHeight - btnRect.bottom;
+  var spaceAbove = btnRect.top;
+  var margin = 8;
+  var top;
+  if(spaceBelow >= menuH + margin){
+    // place below
+    top = btnRect.bottom + 6;
+  } else if(spaceAbove >= menuH + margin){
+    // place above
+    top = btnRect.top - menuH - 6;
+  } else {
+    // place where more space exists and clamp
+    if(spaceBelow >= spaceAbove){ top = Math.min(window.innerHeight - menuH - margin, btnRect.bottom + 6); }
+    else { top = Math.max(margin, btnRect.top - menuH - 6); }
+  }
+  // align menu right edge with button right edge, then clamp
+  var left = btnRect.right - menuW;
+  if(left < margin) left = Math.max(margin, btnRect.left);
+  if(left + menuW > window.innerWidth - margin) left = window.innerWidth - menuW - margin;
+
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+  menu.style.visibility = 'visible';
+  menu.setAttribute('aria-hidden','false');
+  menu.setAttribute('data-open','true');
+  if(btn) btn.setAttribute('aria-expanded','true');
+  var first = menu.querySelector('[role="menuitem"]'); if(first) first.focus();
 }
 
 // Close action menus when clicking outside, and support Escape key
