@@ -4,8 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>JJP Resource Directory — 50+ County Resource Guide</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="favicon.svg">
+<link rel="preload" href="uswds/package/dist/css/uswds.min.css" as="style">
 <link rel="stylesheet" href="uswds/package/dist/css/uswds.min.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<!-- Leaflet CSS will load on-demand when the map tab is opened to improve initial load -->
 <style>
 /* ── JJP — Lighter VA-friendly palette over USWDS ── */
 :root{
@@ -219,10 +222,10 @@ body{background:linear-gradient(180deg,var(--cn-navy),#0b3350 80%);color:var(--c
   </div>
 </main>
 
-<script src="uswds/package/dist/js/uswds.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="jjp-data.js"></script>
-<script src="jjp-app.js"></script>
+<script src="uswds/package/dist/js/uswds.min.js" defer></script>
+<!-- Leaflet JS will be loaded on demand in initMap() -->
+<script src="jjp-data.js" defer></script>
+<script src="jjp-app.js" defer></script>
 <script>
 // Improve keyboard activation: Enter on a focused card activates the first actionable link inside it
 document.addEventListener('keydown', function(e){
