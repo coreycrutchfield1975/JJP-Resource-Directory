@@ -162,7 +162,16 @@ function toggleActionMenu(id, closeOnly){
   if(btn) btn.setAttribute('aria-expanded','true');
   var first = menu.querySelector('[role="menuitem"]');
   if(first){
-    try{ first.focus({preventScroll:true}); }catch(e){ try{ first.focus(); }catch(e){} }
+    // Save current scroll position and restore after focusing to avoid browser auto-scroll/jump
+    var sx = (typeof window.scrollX !== 'undefined') ? window.scrollX : window.pageXOffset;
+    var sy = (typeof window.scrollY !== 'undefined') ? window.scrollY : window.pageYOffset;
+    try{
+      first.focus({preventScroll:true});
+    }catch(e){
+      try{ first.focus(); }catch(e){}
+    }
+    // restore scroll position in next microtask in case browser moved viewport
+    setTimeout(function(){ try{ window.scrollTo(sx, sy); }catch(e){} }, 0);
   }
 }
 
