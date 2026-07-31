@@ -17,12 +17,18 @@ var STATE = {
 
 /* Utility: action buttons and sharing/printing helpers */
 function actionButtonsHTML(item, idx){
-  // buttons: Share, Text, Print, Copy Link
-  var share = '<button type="button" class="usa-button--outline action-small" onclick="shareResource('+idx+')" aria-label="Share resource">🔗 Share</button>';
-  var txt = '<button type="button" class="usa-button--outline action-small" onclick="textResource('+idx+')" aria-label="Text resource">✉️ Text</button>';
-  var pr = '<button type="button" class="usa-button action-small" onclick="printResource('+idx+')" aria-label="Print resource">🖨️ Print</button>';
-  var copy = '<button type="button" class="usa-button--outline action-small" onclick="copyResourceLink('+idx+')" aria-label="Copy resource link">📋 Copy</button>';
-  return share + txt + pr + copy;
+  // Compact actions dropdown: 'Share / Save' label for veterans
+  var id = 'action-'+idx;
+  var btn = '<div class="action-menu-container">' +
+            '  <button type="button" id="'+id+'-button" class="usa-button action-small menu-button" aria-haspopup="true" aria-expanded="false" onclick="toggleActionMenu(\''+id+'\')">Share / Save ▾</button>' +
+            '  <div class="action-menu" id="'+id+'" role="menu" aria-hidden="true">' +
+            '    <button role="menuitem" class="usa-button--outline action-small" onclick="shareResource('+idx+'); toggleActionMenu(\''+id+'\', true)">🔗 Share</button>' +
+            '    <button role="menuitem" class="usa-button--outline action-small" onclick="textResource('+idx+'); toggleActionMenu(\''+id+'\', true)">✉️ Text</button>' +
+            '    <button role="menuitem" class="usa-button action-small" onclick="printResource('+idx+'); toggleActionMenu(\''+id+'\', true)">🖨️ Print</button>' +
+            '    <button role="menuitem" class="usa-button--outline action-small" onclick="copyResourceLink('+idx+'); toggleActionMenu(\''+id+'\', true)">📋 Copy</button>' +
+            '  </div>' +
+            '</div>';
+  return btn;
 }
 
 function resourceUrlFor(item){
@@ -92,6 +98,29 @@ function printResource(idx){
   w.focus();
   setTimeout(function(){ w.print(); }, 500);
 }
+
+
+// Action menu toggle helpers
+function toggleActionMenu(id, closeOnly){
+  // Close all when called without id
+  if(!id){
+    document.querySelectorAll('.action-menu').forEach(function(m){ m.style.display='none'; m.setAttribute('aria-hidden','true'); var btn=document.getElementById(m.id+'-button'); if(btn) btn.setAttribute('aria-expanded','false'); });
+    return;
+  }
+  var menu = document.getElementById(id);
+  var btn = document.getElementById(id+'-button');
+  if(!menu) return;
+  if(closeOnly){ menu.style.display='none'; menu.setAttribute('aria-hidden','true'); if(btn) btn.setAttribute('aria-expanded','false'); return; }
+  var isOpen = menu.style.display === 'block';
+  // close others
+  document.querySelectorAll('.action-menu').forEach(function(m){ if(m.id !== id){ m.style.display='none'; m.setAttribute('aria-hidden','true'); var b=document.getElementById(m.id+'-button'); if(b) b.setAttribute('aria-expanded','false'); } });
+  if(isOpen){ menu.style.display='none'; menu.setAttribute('aria-hidden','true'); if(btn) btn.setAttribute('aria-expanded','false'); }
+  else { menu.style.display='block'; menu.setAttribute('aria-hidden','false'); if(btn) btn.setAttribute('aria-expanded','true'); var first = menu.querySelector('[role="menuitem"]'); if(first) first.focus(); }
+}
+
+// Close action menus when clicking outside, and support Escape key
+document.addEventListener('click', function(e){ if(!e.target.closest || !e.target.closest('.action-menu-container')) toggleActionMenu(); });
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') toggleActionMenu(); });
 
 
 // ═══ Init ═══
