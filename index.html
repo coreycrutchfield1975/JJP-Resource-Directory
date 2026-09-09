@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>JJP Resource Directory — 50+ County Resource Guide</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="favicon.svg">
+<link rel="preload" href="uswds/package/dist/css/uswds.min.css" as="style">
 <link rel="stylesheet" href="uswds/package/dist/css/uswds.min.css">
 <link rel="stylesheet" href="leaflet/leaflet.css">
 <style>
@@ -36,11 +39,19 @@ body{background:var(--bg);color:var(--text)}
 .jjp-nav .usa-nav__link:hover{color:var(--cn-purple)}
 .jjp-section{display:none}
 .jjp-section.active{display:block}
+
+/* Responsive grid for cards */
+.jjp-list{display:grid;grid-gap:1rem;grid-template-columns:1fr}
+@media (min-width:768px){.jjp-list{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1024px){.jjp-list{grid-template-columns:repeat(3,1fr)}}
+
 .jjp-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:10px;
-  padding:1rem;margin-bottom:.75rem;
-  box-shadow:0 2px 8px rgba(0,0,0,.06);
-  color:var(--text);
+  background:var(--cn-surface);
+  border:1px solid var(--cn-border);border-radius:10px;
+  padding:1rem;min-height:88px;
+  box-shadow:0 6px 18px rgba(11,43,59,0.06);
+  color:var(--cn-text);
+  display:flex;flex-direction:column;justify-content:space-between;
 }
 .jjp-card:hover{border-color:var(--cn-gold2);box-shadow:0 4px 16px rgba(201,162,39,.15)}
 .jjp-card .type-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
@@ -63,10 +74,45 @@ body{background:var(--bg);color:var(--text)}
 .county-chip:hover{background:var(--cn-gold2);border-color:var(--cn-gold);color:var(--bg)}
 .county-chip.active{background:var(--cn-gold);color:var(--bg);border-color:var(--cn-gold)}
 
-/* Inputs — light */
-.usa-input,.usa-select,.usa-textarea{
-  background:var(--surface);border:2px solid var(--border);
-  color:var(--text);border-radius:8px;
+
+/* Action buttons inside cards */
+.jjp-card .usa-button,.jjp-card .usa-button--outline{padding:.6rem .9rem;min-height:40px;font-size:.95rem;border-radius:8px}
+.usa-button{background:var(--cn-accent);color:#ffffff;font-weight:700;border:none}
+.usa-button--outline{background:transparent;border:1px solid var(--cn-border);color:var(--cn-accent)}
+.usa-button--outline:hover{background:rgba(43,155,163,0.06)}
+
+.action-small{padding:.4rem .6rem;font-size:.88rem;border-radius:6px}
+
+/* Compact action menu styles */
+.action-menu-container{position:relative;display:inline-block}
+.menu-button{display:inline-flex;align-items:center;gap:8px}
+.action-menu{min-width:160px;display:none;position:fixed;right:auto;z-index:60;padding:8px;background:var(--cn-surface);border:1px solid var(--cn-border);box-shadow:0 6px 18px rgba(11,43,59,0.08);border-radius:8px;overflow:auto;max-height:50vh;-webkit-overflow-scrolling:touch}
+.action-menu button{display:block;width:100%;text-align:left;margin:6px 0;padding:8px;border-radius:6px}
+.action-menu button:focus{outline:3px solid rgba(43,155,163,.18);outline-offset:2px}
+
+.usa-table{color:var(--cn-text)}
+.usa-table thead th{background:rgba(0,0,0,0.04);color:var(--cn-muted);border-color:var(--cn-border)}
+.usa-table td{border-color:var(--cn-border)}
+.usa-hint{color:var(--cn-muted)}
+
+/* Skip link — visible when focused for keyboard users */
+.skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+.skip-link:focus{position:fixed;left:16px;top:12px;width:auto;height:auto;padding:8px 12px;background:var(--cn-accent);color:#fff;border-radius:6px;z-index:9999}
+
+/* County toolbar sticky so print/share controls remain visible while scrolling */
+.county-toolbar{position:sticky;top:72px;z-index:40;background:transparent;padding:0 0 12px 0}
+
+/* Visible and consistent focus styles for keyboard navigation */
+:focus{outline:3px solid rgba(43,155,163,.18);outline-offset:2px}
+
+/* Print-friendly styles: simplified layout and readable colors */
+@media print{
+  body{background:white;color:black}
+  .usa-header,.jjp-nav{display:none!important}
+  .jjp-section{display:block!important}
+  .jjp-card{background:white;color:black;border:none;box-shadow:none}
+  .usa-button,.usa-button--outline,.county-chip{display:none}
+  .jjp-list{grid-template-columns:1fr}
 }
 .usa-input:focus,.usa-select:focus{border-color:var(--cn-gold);box-shadow:0 0 0 3px rgba(201,162,39,.15)}
 .usa-button{background:var(--cn-navy2);color:#fff;font-weight:700;border:none;border-radius:8px}
@@ -127,6 +173,7 @@ body{background:var(--bg);color:var(--text)}
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
 
 <!-- HEADER -->
 <header class="usa-header usa-header--basic">
@@ -146,12 +193,12 @@ body{background:var(--bg);color:var(--text)}
       <li class="usa-nav__primary-item"><a href="#" class="usa-nav__link" onclick="showTab('nursing',this)">🏥 Nursing Homes</a></li>
       <li class="usa-nav__primary-item"><a href="#" class="usa-nav__link" onclick="showTab('care',this)">🏠 Care Homes</a></li>
       <li class="usa-nav__primary-item"><a href="#" class="usa-nav__link" onclick="showTab('map',this)">🗺️ Map</a></li>
-      <li class="usa-nav__primary-item"><a href="#" class="usa-nav__link" onclick="showTab('counties',this)">📍 Counties</a></li>
+      <li class="usa-nav__primary-item"><a href="#" class="usa-nav__link" onclick="showTab('counties',this)">📍 Counties/Print</a></li>
     </ul>
   </div>
 </nav>
 
-<main class="usa-section" style="padding-top:1.5rem;max-width:1400px;margin:0 auto">
+<main id="main-content" class="usa-section" style="padding-top:1.5rem;max-width:1400px;margin:0 auto">
 
   <!-- RESOURCES -->
   <div id="tab-resources" class="jjp-section active">
@@ -249,8 +296,22 @@ body{background:var(--bg);color:var(--text)}
 
   <!-- COUNTIES -->
   <div id="tab-counties" class="jjp-section">
-    <h2 class="font-heading-lg">📍 Counties Served</h2>
+    <h2 class="font-heading-lg">📍 Counties / Print</h2>
+    <!-- County toolbar: select + actions -->
+    <div class="county-toolbar" style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <label for="county-top-select" class="usa-hint" style="margin-right:6px">Select county:</label>
+      <select id="county-top-select" class="usa-select" aria-label="Select county to act on" onchange="onCountyToolbarChange()">
+        <option value="">-- Choose a county --</option>
+      </select>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button id="county-share-btn" class="usa-button--outline action-small" onclick="shareCountyFromToolbar()" aria-label="Share selected county" disabled>🔗 Share</button>
+        <button id="county-text-btn" class="usa-button--outline action-small" onclick="textCountyFromToolbar()" aria-label="Text selected county" disabled>✉️ Text</button>
+        <button id="county-print-btn" class="usa-button action-small" onclick="printCountyFromToolbar()" aria-label="Print selected county" disabled>🖨️ Print</button>
+        <button id="county-copy-btn" class="usa-button--outline action-small" onclick="copyCountyLinkFromToolbar()" aria-label="Copy link for selected county" disabled>📋 Copy</button>
+      </div>
+    </div>
     <div id="county-list"></div>
+    <div id="aria-announcer" aria-live="polite" aria-atomic="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);"></div>
   </div>
 </main>
 

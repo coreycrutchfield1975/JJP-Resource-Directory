@@ -1,0 +1,16 @@
+{
+  "defaults": {
+    "timeout": 30000,
+    "standard": "WCAG2AA"
+  },
+  "urls": [
+    "http://localhost:8080/"
+  ],
+  "runners": [
+    {
+      "id": "htmlcs",
+      "binary": "pa11y",
+      "command": "pa11y"
+    }
+  ]
+}

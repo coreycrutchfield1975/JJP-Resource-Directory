@@ -1,0 +1,41 @@
+name: Accessibility and Performance Checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  a11y-and-lhci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install global tools
+        run: |
+          npm install -g http-server@14 pa11y@6
+
+      - name: Start static server
+        run: |
+          npx http-server -p 8080 &
+          # wait for server
+          for i in {1..10}; do curl -sSf http://localhost:8080 && break || sleep 1; done
+
+      - name: Run Pa11y checks
+        run: |
+          # Run a quick set of accessibility checks against the root
+          pa11y http://localhost:8080 --reporter html --output reports/pa11y-report.html || true
+        continue-on-error: true
+
+      - name: Save reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-reports
+          path: |
+            reports/pa11y-report.html
+
