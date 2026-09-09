@@ -260,7 +260,6 @@ function buildCountySelects(){
   counties.sort();
   var opts='<option value="">All Counties</option>'+counties.map(function(c){return '<option>'+escapeHtml(c)+'</option>';}).join('');
   document.getElementById('res-county').innerHTML=opts;
-  // Nursing home counties
   var nhc=[];
   DATA.nursing_homes.forEach(function(n){if(n.county&&nhc.indexOf(n.county)===-1)nhc.push(n.county);});
   nhc.sort();
@@ -276,6 +275,16 @@ function announce(msg){
   // Clear then set to ensure repeated messages are read
   el.textContent = '';
   setTimeout(function(){ el.textContent = msg; }, 100);
+}
+
+// ═══ Add card menu to a card element ═══
+function addCardMenu(card, id){
+  var menu=document.createElement('div');
+  menu.className='card-menu';
+  menu.innerHTML='<button class="card-menu-btn" title="Actions">\u22ee</button><div class="card-menu-dropdown"><a href="#" onclick="event.preventDefault();printResource(\''+id+'\')">\uD83D\uDD9B\uFE0F Print</a><a href="#" onclick="event.preventDefault();copyResource(\''+id+'\')">\uD83D\uDCCB Copy Text</a><a href="#" onclick="event.preventDefault();shareResource(\''+id+'\')">\uD83D\uDCE4 Share</a></div>';
+  menu.querySelector('.card-menu-btn').onclick=function(e){e.stopPropagation();var dd=this.nextElementSibling;var was=dd.style.display==='block';document.querySelectorAll('.card-menu-dropdown').forEach(function(d){d.style.display='none';});dd.style.display=was?'none':'block';};
+  var hdr=card.querySelector('div');
+  if(hdr) hdr.appendChild(menu);
 }
 
 // ═══ Resources ═══
@@ -503,13 +512,11 @@ function _initLeaflet(){
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
     attribution:'&copy; OpenStreetMap contributors'
   }).addTo(map);
-  // Add nursing homes to map
   DATA.nursing_homes.forEach(function(n){
     if(n.lat&&n.lng){
       L.marker([n.lat,n.lng]).addTo(map).bindPopup('<strong>'+escapeHtml(n.name)+'</strong><br>'+escapeHtml(n.address||'')+'<br><a href="tel:'+escapeHtml(n.phone||'')+'">'+escapeHtml(n.phone||'')+'</a>');
     }
   });
-  // Add care homes
   DATA.care_homes.forEach(function(c){
     if(c.lat&&c.lng){
       L.marker([c.lat,c.lng],{icon:L.divIcon({className:'ch-marker',html:'🏠',iconSize:[20,20]})}).addTo(map).bindPopup('<strong>'+escapeHtml(c.name)+'</strong><br>'+escapeHtml(c.address||'')+'<br><a href="tel:'+escapeHtml(c.phone||'')+'">'+escapeHtml(c.phone||'')+'</a>');
@@ -643,4 +650,115 @@ function filterByCounty(county){
   showTab('resources',document.querySelector('.jjp-nav .usa-nav__link'));
   renderResources();
   window.scrollTo(0,0);
+}
+
+// ═══ Card Actions ═══
+function printResource(id){
+  var card=document.querySelector('.jjp-card[data-id="'+id+'"]');
+  if(!card) return;
+  var clone=card.cloneNode(true);
+  var menus=clone.querySelectorAll('.card-menu,.card-menu-btn,.card-menu-dropdown');
+  for(var i=0;i<menus.length;i++) menus[i].remove();
+  var w=window.open('','_blank','width=700,height=600');
+  w.document.write('<html><head><title>JJP Resource</title><style>body{font-family:Arial,sans-serif;padding:20px;max-width:600px;margin:auto}.usa-button{display:none}</style></head><body>'+clone.outerHTML+'</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},300);
+}
+
+function copyResource(id){
+  var card=document.querySelector('.jjp-card[data-id="'+id+'"]');
+  if(!card) return;
+  var txt=card.innerText.replace(/\n{2,}/g,'\n').trim();
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(txt).then(function(){alert('Copied to clipboard!');}).catch(function(){prompt('Copy this text:',txt);});
+  } else {
+    prompt('Copy this text:',txt);
+  }
+}
+
+function shareResource(id){
+  var card=document.querySelector('.jjp-card[data-id="'+id+'"]');
+  if(!card) return;
+  var txt=card.innerText.replace(/\n{2,}/g,'\n').trim();
+  if(navigator.share){
+    navigator.share({title:'JJP Resource',text:txt}).catch(function(){});
+  } else {
+    window.open('mailto:?subject=JJP Resource&body='+encodeURIComponent(txt));
+  }
+}
+
+function printAllResources(){
+  var cards=document.querySelectorAll('#res-list .jjp-card');
+  if(!cards.length){alert('No resources to print.');return;}
+
+  // Group by type
+  var groups={};
+  var typeOrder=['Emergency','Food','Housing','Veteran','Community','Assistance','Transportation','Legal','Health','Charity'];
+  for(var i=0;i<cards.length;i++){
+    var badge=cards[i].querySelector('.type-badge');
+    var type=badge?badge.textContent.trim():'Other';
+    if(!groups[type]) groups[type]=[];
+    var clone=cards[i].cloneNode(true);
+    var menus=clone.querySelectorAll('.card-menu,.card-menu-btn,.card-menu-dropdown');
+    for(var j=0;j<menus.length;j++) menus[j].remove();
+    groups[type].push(clone.outerHTML);
+  }
+
+  // Get county name from filter
+  var county=document.getElementById('res-county').value||'All Counties';
+  var search=document.getElementById('res-search').value||'';
+  var typeFilter=document.getElementById('res-type').value||'';
+  var subtitle=[county,typeFilter,search].filter(Boolean).join(' — ')||'All Resources';
+  var today=new Date().toLocaleDateString();
+
+  // Build grouped HTML
+  var html='<div class=\"print-header\"><h1>JJP Resource Directory</h1><p><strong>'+cards.length+' resources</strong> • '+subtitle+' • '+today+'</p></div>';
+
+  typeOrder.forEach(function(type){
+    if(groups[type]&&groups[type].length){
+      html+='<h2 class=\"print-section\">'+TYPE_META[type].icon+' '+type+' <span>('+groups[type].length+')</span></h2>';
+      html+=groups[type].join('');
+    }
+  });
+  // Any types not in the order
+  for(var t in groups){
+    if(typeOrder.indexOf(t)===-1){
+      html+='<h2 class=\"print-section\">'+t+' ('+groups[t].length+')</h2>';
+      html+=groups[t].join('');
+    }
+  }
+
+  var w=window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>JJP Resources — '+subtitle+'</title><style>'+
+    '*{box-sizing:border-box}body{font-family:Arial,sans-serif;max-width:850px;margin:0 auto;padding:20px;color:#222}'+
+    '.print-header{text-align:center;border-bottom:3px solid #17365d;padding-bottom:12px;margin-bottom:20px}'+
+    '.print-header h1{margin:0;color:#17365d;font-size:22px}.print-header p{color:#555;font-size:13px;margin:4px 0 0}'+
+    '.print-section{color:#17365d;font-size:16px;border-bottom:2px solid #f6c344;padding-bottom:4px;margin:24px 0 10px}'+
+    '.print-section span{font-weight:400;font-size:13px;color:#888}'+
+    '.jjp-card{border:1px solid #ddd;padding:10px 14px;margin-bottom:8px;border-radius:6px;page-break-inside:avoid;font-size:13px}'+
+    '.jjp-card strong{font-size:14px;color:#17365d}'+
+    '.type-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;text-transform:uppercase;margin-left:6px;border:1px solid #ccc}'+
+    '.usa-button{display:none}.card-menu{display:none}'+
+    '@media print{body{padding:10px;font-size:12px}.jjp-card{font-size:11px}}'+
+    '</style></head><body>'+html+'</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},500);
+}
+
+// Close menus on outside click
+document.addEventListener('click',function(){
+  document.querySelectorAll('.card-menu-dropdown').forEach(function(d){d.style.display='none';});
+});
+
+// ═══ Grid / List Toggle ═══
+function toggleGridView(){
+  var list=document.getElementById('res-list');
+  var btn=document.getElementById('grid-toggle-btn');
+  if(list.classList.contains('grid-view')){
+    list.classList.remove('grid-view');
+    btn.textContent='⊞ Grid View';
+  }else{
+    list.classList.add('grid-view');
+    btn.textContent='☰ List View';
+  }
 }

@@ -175,6 +175,13 @@ body{background:linear-gradient(180deg,var(--cn-bg),#eef6f9 60%);color:var(--cn-
         </select>
       </div>
     </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;gap:8px;flex-wrap:wrap">
+      <span id="res-count-display" class="usa-hint"></span>
+      <div style="display:flex;gap:6px">
+        <button class="usa-button usa-button--outline" onclick="toggleGridView()" style="font-size:.75rem;padding:4px 12px" id="grid-toggle-btn">⊞ Grid View</button>
+        <button class="usa-button usa-button--outline" onclick="printAllResources()" style="font-size:.75rem;padding:4px 12px">🖨️ Print These Results</button>
+      </div>
+    </div>
     <div id="res-list"><span class="usa-hint">Loading resources…</span></div>
   </div>
 
