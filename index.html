@@ -8,31 +8,35 @@
     <link rel="apple-touch-icon" href="favicon.svg">
 <link rel="preload" href="uswds/package/dist/css/uswds.min.css" as="style">
 <link rel="stylesheet" href="uswds/package/dist/css/uswds.min.css">
-<!-- Leaflet CSS will load on-demand when the map tab is opened to improve initial load -->
+<link rel="stylesheet" href="leaflet/leaflet.css">
 <style>
-/* ── JJP — Lighter VA-friendly palette over USWDS ── */
+/* ── JJP — Dark Navy/Gold (VA CLC Theme) ── */
 :root{
- /* Lighter, colorized VA-friendly palette */
- --cn-bg:#f6f9fb; /* page background: very light blue-gray */
- --cn-surface:#ffffff; /* card surface */
- --cn-border:rgba(11,43,59,0.08); /* subtle border */
- --cn-text:#0b2b3b; /* dark, highly readable text */
- --cn-muted:#546e7a; /* muted text for hints */
- --cn-accent:#2b9ba3; /* teal accent */
- --cn-gold:#c9a227;
- --cn-gold2:#e2c96e;
- --cn-cyan:#22d3ee;
- --cn-navy:#093047;
- --cn-navy2:#14495f;
+  --cn-navy:#0a192f;
+  --cn-navy2:#112240;
+  --cn-gold:#c9a227;
+  --cn-gold2:#f6c344;
+  --cn-cyan:#22d3ee;
+  --cn-purple:#7c4dff;
+  --cn-teal:#14b8a6;
+  --cn-green:#2e9d50;
+  --cn-red:#e53e3e;
+  --cn-orange:#ef7d23;
+  --cn-pink:#d7559b;
+  --bg:#0a192f;
+  --surface:#112240;
+  --border:#1d3557;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
 }
-html{font-size:0.95rem;} /* minimum base font size for readability */
-body{background:linear-gradient(180deg,var(--cn-bg),#eef6f9 60%);color:var(--cn-text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,'Helvetica Neue',Arial}
-.usa-header{background:linear-gradient(180deg,var(--cn-accent),rgba(43,155,163,0.9));border-bottom:2px solid rgba(11,43,59,0.06)}
-.usa-header .usa-logo a{color:white;font-weight:700}
-.jjp-nav{background:transparent;backdrop-filter:none;border-bottom:1px solid rgba(11,43,59,0.04)}
-.jjp-nav .usa-nav__link{font-size:0.98rem;padding:.65rem 1rem;color:var(--cn-text)}
-.jjp-nav .usa-nav__link.usa-current{color:var(--cn-accent);border-bottom:2px solid var(--cn-accent);font-weight:700}
-.jjp-nav .usa-nav__link:hover{color:var(--cn-accent)}
+body{background:var(--bg);color:var(--text)}
+/* Rainbow header */
+.usa-header{background:linear-gradient(100deg,var(--cn-navy2),var(--cn-purple),var(--cn-pink),var(--cn-gold2));border-bottom:4px solid var(--cn-gold2)}
+.usa-header .usa-logo a{color:var(--text);font-weight:700;text-shadow:0 0 12px rgba(255,255,255,.2)}
+.jjp-nav{background:var(--surface);border-bottom:1px solid var(--border)}
+.jjp-nav .usa-nav__link{font-size:.85rem;padding:.6rem 1rem;color:var(--muted);font-weight:600}
+.jjp-nav .usa-nav__link.usa-current{color:var(--cn-gold2);border-bottom:3px solid var(--cn-gold);font-weight:700}
+.jjp-nav .usa-nav__link:hover{color:var(--cn-purple)}
 .jjp-section{display:none}
 .jjp-section.active{display:block}
 
@@ -49,41 +53,26 @@ body{background:linear-gradient(180deg,var(--cn-bg),#eef6f9 60%);color:var(--cn-
   color:var(--cn-text);
   display:flex;flex-direction:column;justify-content:space-between;
 }
-.jjp-card:hover{transform:translateY(-2px);border-color:rgba(11,43,59,.12);box-shadow:0 12px 28px rgba(11,43,59,.08)}
-.jjp-card .type-badge{display:inline-block;padding:6px 10px;border-radius:8px;font-size:.88rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-
-/* Rainbow-friendly accessible palette for badges (soft backgrounds, strong contrast text) */
-.type-Emergency{background:#FFECEC;color:#7f1d1d}
-.type-Food{background:#E6F9EC;color:#0b5a2b}
-.type-Housing{background:#EAF2FF;color:#08306b}
-.type-Veteran{background:#F3E8FF;color:#4c1366}
-.type-Community{background:#FFF4E6;color:#6b3e00}
-.type-Assistance{background:#FFF0EA;color:#7a2b16}
-.type-Transportation{background:#E8FCF9;color:#0b5a4a}
-.type-Legal{background:#FFF0F6;color:#5b0f3a}
-.type-Health{background:#EAF7FF;color:#03303a}
-.type-Charity{background:#F0F3FF;color:#1e276a}
-
-#map{height:450px;border-radius:8px;border:1px solid var(--cn-border)}
-
-/* County chips are buttons now for accessibility */
-.county-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;margin:6px;border-radius:20px;background:transparent;color:var(--cn-accent);font-size:.95rem;cursor:pointer;transition:all .12s;border:1px solid rgba(11,43,59,0.04)}
-.county-chip:hover{background:rgba(43,155,163,0.06);border-color:var(--cn-accent)}
-.county-chip.active{background:var(--cn-accent);color:white}
-.county-chip:focus{outline:3px solid rgba(43,155,163,.18);outline-offset:2px}
-
-/* USWDS overrides */
-.usa-input,.usa-select,.usa-textarea{background:var(--cn-surface);border:1px solid var(--cn-border);color:var(--cn-text);border-radius:6px;padding:.6rem;min-height:44px}
-/* Make native select dropdowns easier to read: simple arrow using accent */
-.usa-select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg, transparent 50%, var(--cn-accent) 50%), linear-gradient(135deg, var(--cn-accent) 50%, transparent 50%), linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0));background-position:calc(100% - 20px) calc(1em + 2px), calc(100% - 15px) calc(1em + 2px), 100% 0;background-size:6px 6px,6px 6px,2.5em 2.5em;background-repeat:no-repeat;padding-right:2.6em}
-.usa-select option{background:var(--cn-surface);color:var(--cn-text);}
-.usa-select optgroup{background:var(--cn-surface);color:var(--cn-text);}
-.usa-input:focus,.usa-select:focus{border-color:var(--cn-accent);box-shadow:0 0 0 4px rgba(43,155,163,.12);outline:none}
-/* Remove low-contrast dropdown native arrow backgrounds on some browsers */
-.usa-select::-ms-expand{display:none}
-@media (prefers-contrast: more){
-  .usa-input,.usa-select,.usa-textarea{border-width:2px}
+.jjp-card:hover{border-color:var(--cn-gold2);box-shadow:0 4px 16px rgba(201,162,39,.15)}
+.jjp-card .type-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.type-Emergency{background:rgba(220,38,38,0.15);color:#fca5a5;border:1px solid rgba(220,38,38,0.3)}
+.type-Food{background:rgba(34,197,94,0.15);color:#86efac;border:1px solid rgba(34,197,94,0.3)}
+.type-Housing{background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.3)}
+.type-Veteran{background:rgba(139,92,246,0.15);color:#c4b5fd;border:1px solid rgba(139,92,246,0.3)}
+.type-Community{background:rgba(245,158,11,0.15);color:#fcd34d;border:1px solid rgba(245,158,11,0.3)}
+.type-Assistance{background:rgba(249,115,22,0.15);color:#fdba74;border:1px solid rgba(249,115,22,0.3)}
+.type-Transportation{background:rgba(20,184,166,0.15);color:#5eead4;border:1px solid rgba(20,184,166,0.3)}
+.type-Legal{background:rgba(190,24,93,0.15);color:#f9a8d4;border:1px solid rgba(190,24,93,0.3)}
+.type-Health{background:rgba(14,116,144,0.15);color:#7dd3fc;border:1px solid rgba(14,116,144,0.3)}
+.type-Charity{background:rgba(67,56,202,0.15);color:#a5b4fc;border:1px solid rgba(67,56,202,0.3)}
+#map{height:450px;border-radius:8px;border:1px solid var(--border)}
+.county-chip{
+  display:inline-block;padding:4px 10px;margin:3px;border-radius:20px;
+  background:var(--surface);color:var(--muted);font-size:.8rem;
+  cursor:pointer;transition:all .15s;border:2px solid var(--border);font-weight:600;
 }
+.county-chip:hover{background:var(--cn-gold2);border-color:var(--cn-gold);color:var(--bg)}
+.county-chip.active{background:var(--cn-gold);color:var(--bg);border-color:var(--cn-gold)}
 
 
 /* Action buttons inside cards */
@@ -124,6 +113,62 @@ body{background:linear-gradient(180deg,var(--cn-bg),#eef6f9 60%);color:var(--cn-
   .jjp-card{background:white;color:black;border:none;box-shadow:none}
   .usa-button,.usa-button--outline,.county-chip{display:none}
   .jjp-list{grid-template-columns:1fr}
+}
+.usa-input:focus,.usa-select:focus{border-color:var(--cn-gold);box-shadow:0 0 0 3px rgba(201,162,39,.15)}
+.usa-button{background:var(--cn-navy2);color:#fff;font-weight:700;border:none;border-radius:8px}
+.usa-button:hover{background:var(--cn-purple);box-shadow:0 4px 16px rgba(124,77,255,.25);color:#fff}
+.usa-button--outline{background:transparent;border:2px solid var(--border);color:var(--muted);font-weight:600}
+.usa-button--outline:hover{background:var(--surface);border-color:var(--cn-gold);color:var(--cn-gold2)}
+.usa-table{color:var(--text)}
+.usa-table thead th{background:var(--cn-navy2);color:#fff;border-color:var(--cn-navy2)}
+.usa-table td{border-color:var(--border)}
+.usa-table tbody tr:nth-child(even){background:rgba(15,34,64,.03)}
+.usa-hint{color:var(--muted)}
+@media print{.usa-header,.jjp-nav{display:none!important}.jjp-section{display:block!important}}
+/* Card action menu */
+.card-menu{position:relative;display:inline-block}
+.card-menu-btn{background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:1.1rem;padding:2px 8px;border-radius:4px;line-height:1}
+.card-menu-btn:hover{background:var(--cn-navy2);color:var(--text);border-color:var(--cn-navy2)}
+.card-menu-dropdown{display:none;position:absolute;right:0;top:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;min-width:150px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.3);padding:4px 0}
+.card-menu-dropdown a,.card-menu-dropdown button{display:block;width:100%;text-align:left;background:transparent;border:none;color:var(--text);padding:8px 14px;font-size:.8rem;cursor:pointer;text-decoration:none}
+.card-menu-dropdown a:hover,.card-menu-dropdown button:hover{background:var(--cn-gold);color:var(--bg)}
+/* Card text classes */
+.card-meta{font-size:.85rem;color:var(--muted);margin-top:4px}
+.card-notes{font-size:.8rem;color:var(--muted);margin-top:6px;font-style:italic}
+/* Print phone class */
+.print-phone{display:inline-block;padding:4px 12px;font-size:.75rem;color:#17365d}
+/* Grid view */
+#res-list.grid-view{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:.75rem}
+#res-list.grid-view .jjp-card{margin-bottom:0}
+@media (max-width:700px){#res-list.grid-view{grid-template-columns:1fr}}
+
+/* Modal styling */
+.modal button[type="submit"],
+.modal-btn-save {
+  background: var(--cn-gold) !important;
+  color: var(--bg) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 8px 20px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+}
+.modal-btn-save:hover {
+  background: var(--cn-gold2) !important;
+}
+.modal button[type="button"],
+.modal-btn-cancel {
+  background: var(--surface) !important;
+  border: 2px solid var(--border) !important;
+  border-radius: 6px !important;
+  padding: 8px 20px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  color: var(--muted) !important;
+}
+.modal-btn-cancel:hover {
+  border-color: var(--cn-gold) !important;
+  color: var(--text) !important;
 }
 </style>
 </head>
@@ -270,21 +315,9 @@ body{background:linear-gradient(180deg,var(--cn-bg),#eef6f9 60%);color:var(--cn-
   </div>
 </main>
 
-<script src="uswds/package/dist/js/uswds.min.js" defer></script>
-<!-- Leaflet JS will be loaded on demand in initMap() -->
-<script src="jjp-data.js" defer></script>
-<script src="jjp-app.js" defer></script>
-<script>
-// Improve keyboard activation: Enter on a focused card activates the first actionable link inside it
-document.addEventListener('keydown', function(e){
-  if(e.key === 'Enter' && document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('jjp-card')){
-    var link = document.activeElement.querySelector('a');
-    if(link){
-      try{ link.focus(); link.click(); }catch(err){ link.focus(); }
-      e.preventDefault();
-    }
-  }
-});
-</script>
+<script src="uswds/package/dist/js/uswds.min.js"></script>
+<script src="leaflet/leaflet.js"></script>
+<script src="jjp-data.js"></script>
+<script src="jjp-app-enhanced.js"></script>
 </body>
 </html>
